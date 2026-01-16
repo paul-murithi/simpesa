@@ -1,0 +1,17 @@
+.env
+docker-compose.override.yml
+node_modules/
+dist/
+build/
+.vscode/
+.DS_Store
+.idea/
+*.log
+*.tmp
+coverage/
+npm-debug.log*
+yarn-error.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
