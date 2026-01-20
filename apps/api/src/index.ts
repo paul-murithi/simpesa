@@ -1,1 +1,26 @@
-console.log("container up");
+import express from "express";
+import type { Request, Response } from "express";
+import testRouter from "./routes/test.js";
+import cors from "cors";
+
+const app = express();
+
+app.get("/health", (req: Request, res: Response) => res.send("Server healthy"));
+
+// CORS middleware
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
+    credentials: true,
+  }),
+);
+
+// Body parser middleware
+app.use(express.json());
+
+// Routes
+app.use("/api", testRouter);
+
+export default app;
