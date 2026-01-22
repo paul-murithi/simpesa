@@ -1,12 +1,26 @@
-# ui/Dockerfile
-FROM node:20-alpine AS build
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
 
+# Copy root package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+
+RUN npm install
+
+# Copy UI source code
+COPY apps/ui ./apps/ui
+
+# Build the UI. output is /app/apps/ui/dist
+RUN npm run build:ui
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-CMD ["nginx", "-g", "daemon off;"]
+
+# Copy built files
+COPY --from=builder /app/apps/ui/dist /usr/share/nginx/html
+
 EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

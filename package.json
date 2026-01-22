@@ -19,7 +19,7 @@
     "build:worker": "tsc -b apps/worker",
     "start:worker": "node dist/apps/worker/index.js",
     "dev:ui": "vite --config apps/ui/vite.config.ts",
-    "build:ui": "tsc -b && vite build --config apps/ui/vite.config.ts",
+    "build:ui": "vite build --config apps/ui/vite.config.ts",
     "preview:ui": "vite preview --config apps/ui/vite.config.ts",
     "build": "npm run build:api && npm run build:worker && npm run build:ui",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:ui\""
