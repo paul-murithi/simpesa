@@ -1,0 +1,14 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model test_jobs {
+  id         Int       @id @default(autoincrement())
+  message    String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
