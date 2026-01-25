@@ -22,7 +22,10 @@ router.post("/test-job", async (req: Request, res: Response) => {
 router.get("/test-results", async (req: Request, res: Response) => {
   try {
     const rows = await db.query(
-      "SELECT * FROM test_jobs ORDER BY created_at DESC LIMIT 10",
+      `SELECT id, message, created_at
+       FROM test_jobs
+       ORDER BY created_at DESC
+       LIMIT 10;`,
     );
     res.json(rows.rows);
   } catch (err) {

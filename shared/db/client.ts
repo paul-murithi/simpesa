@@ -6,9 +6,18 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-console.log("DB URL:", process.env.DATABASE_URL);
+pool.on("error", (err) => {
+  console.error("Unexpected DB error:", err);
+});
 
 export default pool;
-export const query = (text: string, params?: any[]) => {
-  return pool.query(text, params);
+
+// Wrapper with logging
+export const query = async (text: string, params?: any[]) => {
+  try {
+    return await pool.query(text, params);
+  } catch (err) {
+    console.error("Query error:", { text, params, err });
+    throw err;
+  }
 };

@@ -27,3 +27,9 @@ worker.on("completed", (job) => {
 worker.on("failed", (job, err) => {
   console.error(`Job ${job?.id} failed:`, err);
 });
+
+process.on("SIGTERM", async () => {
+  await worker.close();
+  await db.end();
+  process.exit(0);
+});
