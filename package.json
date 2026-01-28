@@ -22,7 +22,10 @@
     "build:ui": "vite build --config apps/ui/vite.config.ts",
     "preview:ui": "vite preview --config apps/ui/vite.config.ts",
     "build": "npm run build:api && npm run build:worker && npm run build:ui",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:ui\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:ui\"",
+    "db:migrate": "tsx shared/db/migration-runner.ts up",
+    "db:rollback": "tsx shared/db/migration-runner.ts rollback",
+    "db:reset": "npm run db:rollback && npm run db:migrate"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
