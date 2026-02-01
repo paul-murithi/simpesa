@@ -2,6 +2,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import testRouter from "./routes/test.js";
 import cors from "cors";
+import stkRoute from "./routes/stkpush.js";
 
 const app = express();
 
@@ -22,5 +23,6 @@ app.use(express.json());
 
 // Routes
 app.use("/api", testRouter);
+app.use("/api/v1/stkpush", stkRoute);
 
 export default app;
