@@ -1,5 +1,4 @@
 -- Migration: Create Transactions Table (Updated with Idempotency & Expiry)
--- 1. Create a custom Type for our State Machine
 DO $$ BEGIN
     CREATE TYPE transaction_status AS ENUM (
         'PENDING',
@@ -13,7 +12,6 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- 2. Create Table
 CREATE TABLE IF NOT EXISTS transactions (
     request_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     checkout_id UUID UNIQUE NOT NULL,
@@ -28,7 +26,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '15 minutes')
 );
 
--- 3. High-Performance Indices
+-- High-Performance Indixes
 CREATE INDEX IF NOT EXISTS idx_transactions_phone_number ON transactions (phone_number);
 CREATE INDEX IF NOT EXISTS idx_transactions_short_code ON transactions (short_code);
 CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions (status);

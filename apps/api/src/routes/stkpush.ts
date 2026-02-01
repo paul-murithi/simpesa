@@ -1,7 +1,8 @@
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
+import StkPushController from "../controller/StkPush.controller.js";
 
 const stkRoute = Router();
 
-stkRoute.post("stkpush/v1/processrequest", (req: Request, res: Response) => {
-  res.status(200).json({ success: "true" });
-});
+stkRoute.post("/processrequest", StkPushController);
+
+export default stkRoute;

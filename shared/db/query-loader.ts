@@ -40,13 +40,8 @@ function parseNamedQueries(content: string): QueryMap {
 /**
  * Load all SQL queries from a file
  */
-export function loadQueries(filename: string): QueryMap {
-  const filePath = join(__dirname, "queries", filename);
+export function loadQueries<T extends QueryMap>(filename: string): T {
+  const filePath = join(__dirname, filename);
   const content = readFileSync(filePath, "utf-8");
-  return parseNamedQueries(content);
+  return parseNamedQueries(content) as T;
 }
-
-// Pre-load all queries
-export const userQueries = loadQueries("users.sql");
-export const merchantQueries = loadQueries("merchants.sql");
-export const transactionQueries = loadQueries("transactions.sql");
