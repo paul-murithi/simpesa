@@ -9,7 +9,7 @@ const router = Router();
 router.post("/test-job", async (req: Request, res: Response) => {
   try {
     const message = req.body.message || "hello world"; // allow custom messages
-    await addJob(message); // use the helper
+    await addJob("test-job", message); // use the helper
 
     res.json({ status: "job enqueued" });
   } catch (err) {

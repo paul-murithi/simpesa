@@ -19,7 +19,7 @@ export const queue = new Queue("my-queue", {
   },
 });
 
-export const addJob = async (message: string) => {
-  await queue.add("insert-job", { message });
+export const addJob = async (queueName: string, message: string) => {
+  await queue.add(queueName, message);
   console.log("Job added:", message);
 };
