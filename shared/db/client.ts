@@ -13,7 +13,7 @@ pool.on("error", (err) => {
 export default pool;
 
 // Wrapper with logging
-export const query = async (text: string, params?: any[]) => {
+export const Query = async (text: string, params?: any[]) => {
   try {
     return await pool.query(text, params);
   } catch (err) {

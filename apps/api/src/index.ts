@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import testRouter from "./routes/test.js";
 import cors from "cors";
 import stkRoute from "./routes/stkpush.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
@@ -24,5 +25,8 @@ app.use(express.json());
 // Routes
 app.use("/api", testRouter);
 app.use("/api/v1/stkpush", stkRoute);
+
+// Error handling middleware
+app.use(errorHandler);
 
 export default app;

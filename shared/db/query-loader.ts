@@ -41,7 +41,7 @@ function parseNamedQueries(content: string): QueryMap {
  * Load all SQL queries from a file
  */
 export function loadQueries<T extends QueryMap>(filename: string): T {
-  const filePath = join(__dirname, filename);
+  const filePath = join(__dirname, "queries", filename);
   const content = readFileSync(filePath, "utf-8");
   return parseNamedQueries(content) as T;
 }

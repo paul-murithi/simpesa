@@ -37,6 +37,7 @@
     "pg": "^8.17.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "redis": "^5.10.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -50,6 +51,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/redis": "^4.0.10",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "concurrently": "^8.2.0",
     "eslint": "^9.39.1",
