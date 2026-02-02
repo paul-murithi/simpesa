@@ -6,7 +6,7 @@ export const transactionQueries =
 
 interface transactionQueries {
   [key: string]: string;
-  InsertTransaction: string;
+  insertNewTransaction: string;
   GetTransactionById: string;
   UpdateTransactionStatus: string;
 }

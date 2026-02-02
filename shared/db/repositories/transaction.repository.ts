@@ -10,7 +10,6 @@ export class TransactionRepository {
     amount: number;
     status: string;
   }) {
-    const queryText = transactionQueries.InsertTransaction;
     const values = [
       params.checkoutId,
       params.externalReference,
@@ -19,7 +18,10 @@ export class TransactionRepository {
       params.amount,
     ];
 
-    const result = await db.query(queryText, values);
+    const result = await db.query(
+      transactionQueries.insertNewTransaction,
+      values,
+    );
     return result.rows[0];
   }
 }

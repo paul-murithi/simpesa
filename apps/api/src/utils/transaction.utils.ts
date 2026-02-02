@@ -1,4 +1,4 @@
-import crypto, { Hash } from "node:crypto";
+import crypto, { Hash, randomUUID } from "node:crypto";
 import type { CreateTransactionDTO } from "../middleware/transaction.validation.js";
 
 export class TransactionUtils {
@@ -17,6 +17,6 @@ export class TransactionUtils {
     return hash;
   }
   generateCheckoutId() {
-    return crypto.createHash("sha256").digest("hex");
+    return randomUUID();
   }
 }
