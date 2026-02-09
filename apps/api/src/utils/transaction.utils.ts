@@ -16,7 +16,7 @@ export class TransactionUtils {
 
     return hash;
   }
-  generateCheckoutId() {
+  generateCheckoutId(): string {
     return randomUUID();
   }
 }

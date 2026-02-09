@@ -9,4 +9,5 @@ interface transactionQueries {
   insertNewTransaction: string;
   GetTransactionById: string;
   UpdateTransactionStatus: string;
+  ensureTransaction: string;
 }
