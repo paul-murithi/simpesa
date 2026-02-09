@@ -18,10 +18,7 @@ export class TransactionRepository {
       params.amount,
     ];
 
-    const result = await db.query(
-      transactionQueries.insertNewTransaction,
-      values,
-    );
+    const result = await db.query(transactionQueries.ensureTransaction, values);
     return result.rows[0];
   }
 }

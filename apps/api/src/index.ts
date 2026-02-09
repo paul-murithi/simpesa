@@ -24,7 +24,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api", testRouter);
-app.use("/api/v1/stkpush", stkRoute);
+app.use("/stkpush", stkRoute);
 
 // Error handling middleware
 app.use(errorHandler);

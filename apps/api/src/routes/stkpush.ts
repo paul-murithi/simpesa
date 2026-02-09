@@ -3,6 +3,6 @@ import StkPushController from "../controller/StkPush.controller.js";
 
 const stkRoute = Router();
 
-stkRoute.post("/processrequest", StkPushController);
+stkRoute.post("/v1/processrequest", StkPushController);
 
 export default stkRoute;
