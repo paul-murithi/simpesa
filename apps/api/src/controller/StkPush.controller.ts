@@ -49,11 +49,7 @@ export default async function StkPushController(req: Request, res: Response) {
       checkOutId,
       TRANSACTION_STATUS.PENDING,
     );
-    await service.queuePaymentTask({
-      checkoutId: checkOutId,
-      phoneNumber: data.phone_number,
-      amount: data.amount,
-    });
+    await service.queuePaymentTask(checkOutId);
 
     // Logger - Success
     child.info(

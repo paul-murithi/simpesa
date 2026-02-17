@@ -8,20 +8,24 @@ const connection = {
 
 export const paymentQueue = new Queue("payment-tasks", { connection });
 
-export const addPaymentJob = async (checkoutId: string, data: any) => {
-  return await paymentQueue.add("stk-push-request", data, {
-    jobId: checkoutId,
+export const addPaymentJob = async (checkoutId: string) => {
+  return await paymentQueue.add(
+    "stk-push-request",
+    { checkoutId },
+    {
+      jobId: checkoutId,
 
-    // Cleanup
-    removeOnComplete: { age: 3600, count: 1000 },
-    removeOnFail: { age: 86400 }, // 24H
+      // Cleanup
+      removeOnComplete: { age: 3600, count: 1000 },
+      removeOnFail: { age: 86400 }, // 24H
 
-    // Re-try count (3) for worker
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      //exponential backoff delay
-      delay: 1000,
+      // Re-try count (3) for worker
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        //exponential backoff delay
+        delay: 1000,
+      },
     },
-  });
+  );
 };
