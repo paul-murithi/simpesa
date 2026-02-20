@@ -10,15 +10,14 @@ console.log("Worker running....Waiting for jobs");
 const worker = new Worker(
   "payment-tasks",
   async (job) => {
-    const { checkoutId, phoneNumber, amount } = job.data;
+    const { checkoutId } = job.data;
     const child = logger.child({ checkoutId });
     child.info("Worker started processing job");
 
-    // TODO: Implement actual payment processing logic
-    child.info(
-      { checkoutId, phoneNumber, amount },
-      "Payment processing for transaction",
-    );
+    // TODO: Fetch transaction by checkoutId
+    // TODO: Implement actual payment processing logic (DB transaction, locking, etc.)
+
+    child.info({ checkoutId }, "Payment processing for transaction");
 
     // Simulate payment processing delay
     await new Promise((resolve) => setTimeout(resolve, 8000));
