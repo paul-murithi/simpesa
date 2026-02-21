@@ -8,4 +8,6 @@ interface UserQueries {
   GetUserById: string;
   CreateUser: string;
   DeleteUser: string;
+  lockUserByPhoneNumber: string;
+  debitUser: string;
 }

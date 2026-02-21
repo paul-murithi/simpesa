@@ -17,3 +17,19 @@ VALUES (
     'PENDING',
     NOW() + INTERVAL '15 minutes'
 ) RETURNING request_id;
+
+
+-- name: markTransactionSuccess
+UPDATE transactions
+SET "status" = $1
+WHERE
+    checkout_id = $2
+    AND "status" = $3;
+
+
+-- name: markTransactionProcessing
+UPDATE transactions
+SET "status" = $1
+WHERE
+    checkout_id = $2
+    AND "status" = $3;

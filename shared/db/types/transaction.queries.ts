@@ -10,4 +10,6 @@ interface transactionQueries {
   GetTransactionById: string;
   UpdateTransactionStatus: string;
   ensureTransaction: string;
+  markTransactionSuccess: string;
+  markTransactionProcessing: string;
 }
