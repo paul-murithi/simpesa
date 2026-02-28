@@ -3,8 +3,15 @@ import { userQueries } from "../types/user.queries.js";
 import { merchantQueries } from "../types/merchant.queries.js";
 import db from "../../db/client.js";
 import type { Merchant, Transaction, User } from "../types/base-types.js";
-import { AppError } from "../utils/AppError.js";
+import { AppError, BusinessError } from "../utils/AppError.js";
+import {
+  NotFoundError,
+  DomainError,
+  InsufficientFundsError,
+  InvalidStateError,
+} from "../utils/errors.js";
 import { TRANSACTION_STATUS } from "../types/base-types.js";
+import type { PoolClient } from "pg";
 
 export class TransactionRepository {
   async insertNewTransaction(params: {
@@ -31,7 +38,6 @@ export class TransactionRepository {
    * Phase 1
    * Attempts to lock the rows and validate if balance is sufficient
    * If Success, transitions the state to processing
-   * TODO: Implement Phase 2 after PIN input and finalize payment
    */
   async lockRowsValidate(params: {
     merchant: Merchant;
@@ -99,6 +105,137 @@ export class TransactionRepository {
       throw error;
     } finally {
       client.release();
+    }
+  }
+
+  /**
+   * Phase 2
+   * Processes the transaction atomically.
+   */
+  async processTransaction(
+    transaction: Transaction,
+    user: User,
+    merchant: Merchant,
+  ): Promise<void> {
+    const { checkout_id, amount: transactionAmount } = transaction;
+    const { phone_number } = user;
+    const { short_code } = merchant;
+
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      // Lock and verify transaction status
+      const txResult = await client.query(
+        transactionQueries.lockTransactionsByCheckoutId,
+        [checkout_id],
+      );
+      const status = txResult.rows[0]?.status;
+
+      if (!status) {
+        throw new NotFoundError(
+          "No transaction found for provided checkout id",
+        );
+      }
+      if (status !== TRANSACTION_STATUS.PROCESSING) {
+        throw new InvalidStateError(
+          "Transaction is not in EXPECTED (PROCESSING) state",
+        );
+      }
+
+      // Lock user and check balance
+      const userResult = await client.query(userQueries.lockUserByPhoneNumber, [
+        phone_number,
+      ]);
+      const balance = userResult.rows[0]?.balance;
+
+      if (balance === undefined) {
+        throw new NotFoundError("No user found for provided phone number");
+      }
+      if (balance < transactionAmount) {
+        throw new InsufficientFundsError(
+          "User balance is less than the transaction amount",
+        );
+      }
+
+      // Lock merchant
+      const merchantResult = await client.query(
+        merchantQueries.lockMerchantByShortCode,
+        [short_code],
+      );
+      if (merchantResult.rowCount === 0) {
+        throw new NotFoundError("No merchant found for provided short code");
+      }
+
+      // Debit and credit accounts
+      await client.query(userQueries.debitUser, [
+        transactionAmount,
+        phone_number,
+      ]);
+      await client.query(merchantQueries.creditMerchant, [
+        transactionAmount,
+        short_code,
+      ]);
+
+      // Update status to terminal state
+      await client.query(transactionQueries.markTransactionSuccess, [
+        TRANSACTION_STATUS.SUCCESS,
+        checkout_id,
+        TRANSACTION_STATUS.PROCESSING,
+      ]);
+
+      await client.query("COMMIT");
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error(
+          `Critical: Failed to rollback transaction ${checkout_id} in DB`,
+          rollbackError,
+        );
+      }
+
+      // Record FAILED state
+      const isTerminalBusinessError =
+        error instanceof InsufficientFundsError ||
+        error instanceof NotFoundError;
+      const isSystemError = !(error instanceof DomainError);
+
+      if (isTerminalBusinessError || isSystemError) {
+        await this.markTransactionFailed(checkout_id);
+      } else if (error instanceof InvalidStateError) {
+        console.warn(
+          `Warning: Transaction ${checkout_id} is in invalid state during processing: ${error.message}`,
+        );
+      } else {
+        console.error(
+          `Critical: Unexpected error during processing transaction ${checkout_id}`,
+          error,
+        );
+      }
+
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Helper method to mark a transaction as failed.
+   */
+  private async markTransactionFailed(checkout_id: string): Promise<void> {
+    try {
+      await db.query(transactionQueries.markTransactionFailed, [
+        TRANSACTION_STATUS.FAILED,
+        checkout_id,
+        TRANSACTION_STATUS.PROCESSING,
+      ]);
+    } catch (error) {
+      console.error(
+        `Critical: Failed to mark transaction ${checkout_id} as FAILED in DB`,
+        error,
+      );
     }
   }
 }

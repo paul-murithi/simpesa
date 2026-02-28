@@ -12,4 +12,6 @@ interface transactionQueries {
   ensureTransaction: string;
   markTransactionSuccess: string;
   markTransactionProcessing: string;
+  lockTransactionsByCheckoutId: string;
+  markTransactionFailed: string;
 }

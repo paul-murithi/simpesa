@@ -14,3 +14,8 @@ export class AppError extends Error {
     this.developerHint = developerHint;
   }
 }
+
+class BusinessError extends AppError {}
+class TransientError extends AppError {}
+
+export { BusinessError, TransientError };

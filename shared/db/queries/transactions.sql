@@ -33,3 +33,15 @@ SET "status" = $1
 WHERE
     checkout_id = $2
     AND "status" = $3;
+
+-- name: lockTransactionsByCheckoutId
+SELECT "status" FROM transactions
+WHERE checkout_id = $1
+FOR UPDATE;
+
+-- name: markTransactionFailed
+UPDATE transactions
+SET "status" = $1
+WHERE
+    checkout_id = $2
+    AND "status" = $3
