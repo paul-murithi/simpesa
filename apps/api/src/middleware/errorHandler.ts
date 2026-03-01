@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/errors/AppError.js";
+import { BaseError } from "../utils/errors/Errors.js";
 
 export function errorHandler(
   err: unknown,
@@ -7,19 +7,16 @@ export function errorHandler(
   res: Response,
   next: NextFunction,
 ) {
-  if (err instanceof AppError) {
+  if (err instanceof BaseError) {
     return res.status(err.statusCode).json({
-      ResponseCode: err.responseCode,
-      ResponseDescription: err.message,
+      message: err.message,
       developerHint: err.developerHint,
     });
   }
 
-  console.error(err);
+  console.error("Unexpected error:", err);
 
   return res.status(500).json({
-    ResponseCode: "500",
-    ResponseDescription: "Internal Server Error",
-    developerHint: "An unexpected error occurred.",
+    message: "Internal Server Error",
   });
 }

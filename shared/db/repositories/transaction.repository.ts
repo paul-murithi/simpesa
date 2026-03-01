@@ -3,13 +3,12 @@ import { userQueries } from "../types/user.queries.js";
 import { merchantQueries } from "../types/merchant.queries.js";
 import db from "../../db/client.js";
 import type { Merchant, Transaction, User } from "../types/base-types.js";
-import { AppError, BusinessError } from "../utils/AppError.js";
 import {
   NotFoundError,
   DomainError,
   InsufficientFundsError,
   InvalidStateError,
-} from "../utils/errors.js";
+} from "../utils/Errors.js";
 import { TRANSACTION_STATUS } from "../types/base-types.js";
 import type { PoolClient } from "pg";
 
@@ -59,11 +58,7 @@ export class TransactionRepository {
         phone_number,
       ]);
       if (userResult.rowCount === 0) {
-        throw new AppError(
-          404,
-          "User not found",
-          "No user found for provided phone number",
-        );
+        throw new NotFoundError("User with given phone number not found");
       }
 
       const currentBalance = userResult.rows[0].balance;
@@ -74,18 +69,12 @@ export class TransactionRepository {
         [short_code],
       );
       if (merchantResult.rowCount === 0) {
-        throw new AppError(
-          404,
-          "Merchant not found",
-          "No merchant found for provided short code",
-        );
+        throw new NotFoundError("No merchant found for provided short code");
       }
 
       // check user balance against transaction amount
       if (currentBalance < transactionAmount) {
-        throw new AppError(
-          400,
-          "Insufficient funds",
+        throw new InsufficientFundsError(
           "User balance is less than transaction amount",
         );
       }
@@ -100,8 +89,16 @@ export class TransactionRepository {
       // Commit the transaction
       await client.query("COMMIT");
     } catch (error) {
-      // Rollback the transaction
-      await client.query("ROLLBACK");
+      try {
+        // Rollback the transaction
+        await client.query("ROLLBACK");
+      } catch (error) {
+        console.error(
+          `CRITICAL: Failed to rollback transaction ${checkout_id} in DB`,
+          error,
+        );
+      }
+
       throw error;
     } finally {
       client.release();

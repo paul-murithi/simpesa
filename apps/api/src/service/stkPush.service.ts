@@ -1,15 +1,10 @@
 import { TransactionRepository } from "../../../../shared/db/repositories/transaction.repository.js";
-import {
-  TRANSACTION_STATUS,
-  type TransactionStatus,
-} from "../../../../shared/db/types/base-types.js";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import type { CreateTransactionDTO } from "../middleware/transaction.validation.js";
 import { redisClient } from "../lib/redis/redisClient.js";
-import { transactionQueries } from "../../../../shared/db/types/transaction.queries.js";
-import { Query } from "../../../../shared/db/client.js";
 import { randomUUID } from "crypto";
 import { addPaymentJob } from "../../../../shared/queue/queue.js";
+import { BaseError, ExternalServiceError } from "../utils/errors/Errors.js";
 
 export class StkPushService {
   private utils = new TransactionUtils();
@@ -69,6 +64,7 @@ export class StkPushService {
     status: string,
   ) {
     const { amount, phone_number, short_code, external_reference } = dataDto;
+
     await this.repo.insertNewTransaction({
       amount: amount,
       checkoutId: checkoutId,
@@ -88,9 +84,11 @@ export class StkPushService {
       await addPaymentJob(checkoutId);
       console.log(`[Queue] Job queued for Checkout: ${checkoutId}`);
     } catch (error) {
-      // This is where we catch "Redis is down"
-      console.error("[Queue Error] Failed to hand off to BullMQ:", error);
-      throw error; // Let the controller handle the cleanup
+      throw new ExternalServiceError(
+        "Failed to queue payment job",
+        error,
+        "An error occurred while queuing the payment job.",
+      );
     }
   }
 }

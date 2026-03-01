@@ -5,7 +5,7 @@ import {
   type CreateTransactionDTO,
 } from "../middleware/transaction.validation.js";
 import z from "zod";
-import { AppError } from "../utils/errors/AppError.js";
+import { ConflictError, ValidationError } from "../utils/errors/Errors.js";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { TRANSACTION_STATUS } from "../../../../shared/db/types/base-types.js";
 import { randomUUID } from "crypto";
@@ -20,10 +20,9 @@ export default async function StkPushController(req: Request, res: Response) {
   if (!result.success) {
     const formattedErrors = z.treeifyError(result.error).errors;
 
-    throw new AppError(
-      400,
+    throw new ValidationError(
       "Invalid request data",
-      "Check your phone_number format and ensure amount is a positive number.",
+      `Check your phone_number format and ensure amount is a positive number.`,
     );
   }
 
@@ -33,10 +32,9 @@ export default async function StkPushController(req: Request, res: Response) {
   const lock = await service.tryLockTransaction(data);
 
   if (!lock) {
-    throw new AppError(
-      429,
-      "Too Many Requests",
-      "Duplicate transaction detected. Please wait 60 seconds before retrying the same payload.",
+    throw new ConflictError(
+      "Duplicate transaction detected",
+      "A similar transaction is already being processed. Please wait a moment before trying again.",
     );
   }
 
@@ -73,11 +71,7 @@ export default async function StkPushController(req: Request, res: Response) {
       "Error inserting transaction",
     );
 
-    throw new AppError(
-      500,
-      "Internal Server Error",
-      "An error occurred while processing your transaction.",
-    );
+    throw error;
   }
 
   return res.json({
