@@ -10,7 +10,6 @@ import {
   InvalidStateError,
 } from "../utils/Errors.js";
 import { TRANSACTION_STATUS } from "../types/base-types.js";
-import type { PoolClient } from "pg";
 
 export class TransactionRepository {
   async insertNewTransaction(params: {

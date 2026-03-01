@@ -5,5 +5,5 @@
     "outDir": "../../dist/shared/db",
     "rootDir": "."
   },
-  "include": ["./**/*", "types"]
+  "include": ["./**/*", "types", "**/*.ts"]
 }
