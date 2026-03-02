@@ -1,15 +1,14 @@
 {
-  "$schema": "https://json.schemastore.org/package.json",
   "name": "simpesa",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "workspaces": [
     "apps/*",
-    "shared/*"
+    "packages/*"
   ],
   "scripts": {
-    "dev:api": "tsx watch apps/api/src/server.ts",
+    "dev:api": "tsx watch apps/api/src/index.ts",
     "build:api": "tsc -b apps/api",
     "start:api": "node dist/apps/api/index.js",
     "prisma:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
@@ -21,10 +20,10 @@
     "dev:ui": "vite --config apps/ui/vite.config.ts",
     "build:ui": "vite build --config apps/ui/vite.config.ts",
     "preview:ui": "vite preview --config apps/ui/vite.config.ts",
-    "build": "npm run build:api && npm run build:worker && npm run build:ui",
+    "build": "tsc -b && npm run copy-sql --workspace=@app/db",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:ui\"",
-    "db:migrate": "tsx shared/db/migration-runner.ts up",
-    "db:rollback": "tsx shared/db/migration-runner.ts rollback",
+    "db:migrate": "tsx packages/db/src/migration-runner.ts up",
+    "db:rollback": "tsx packages/db/src/migration-runner.ts rollback",
     "db:reset": "npm run db:rollback && npm run db:migrate"
   },
   "dependencies": {

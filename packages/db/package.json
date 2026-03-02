@@ -1,0 +1,17 @@
+{
+  "name": "@app/db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b && npm run copy-sql",
+    "copy-sql": "mkdir -p dist/queries dist/migrations && cp src/queries/*.sql dist/queries/ && cp src/migrations/*.sql dist/migrations/ && cp src/schema_migrations.sql dist/"
+  },
+  "dependencies": {
+    "@app/utils": "*",
+    "pg": "^8.17.1",
+    "dotenv": "^16.6.1"
+  }
+}

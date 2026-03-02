@@ -5,7 +5,7 @@ export class BaseError extends Error {
 
   constructor(
     message: string,
-    statusCode: number,
+    statusCode: number = 500,
     isOperational = true,
     developerHint?: string,
   ) {
@@ -15,6 +15,12 @@ export class BaseError extends Error {
     this.developerHint = developerHint;
 
     Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class DomainError extends BaseError {
+  constructor(message: string, statusCode: number = 400) {
+    super(message, statusCode);
   }
 }
 
@@ -45,3 +51,6 @@ export class ExternalServiceError extends BaseError {
     super(message, 502, true, developerHint);
   }
 }
+
+export class InvalidStateError extends DomainError {}
+export class InsufficientFundsError extends DomainError {}

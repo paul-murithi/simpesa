@@ -1,15 +1,15 @@
 import type { Request, Response } from "express";
-import { StkPushService } from "../service/stkPush.service.js";
+import { StkPushService } from "../services/stkPush.service.js";
 import {
   createTransactionSchema,
   type CreateTransactionDTO,
 } from "../middleware/transaction.validation.js";
 import z from "zod";
-import { ConflictError, ValidationError } from "../utils/errors/Errors.js";
+import { ConflictError, ValidationError } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
-import { TRANSACTION_STATUS } from "../../../../shared/db/types/base-types.js";
+import { TRANSACTION_STATUS } from "@app/db";
 import { randomUUID } from "crypto";
-import { logger } from "../utils/logger.js";
+import { logger } from "@app/utils";
 
 const service = new StkPushService();
 const util = new TransactionUtils();

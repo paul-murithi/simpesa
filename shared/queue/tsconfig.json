@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "composite": true,
-    "outDir": "../../dist/shared/queue",
-    "rootDir": "."
-  },
-  "include": ["./**/*"]
-}

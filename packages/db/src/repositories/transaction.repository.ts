@@ -1,14 +1,14 @@
 import { transactionQueries } from "../types/transaction.queries.js";
 import { userQueries } from "../types/user.queries.js";
 import { merchantQueries } from "../types/merchant.queries.js";
-import db from "../../db/client.js";
+import db from "../client.js";
 import type { Merchant, Transaction, User } from "../types/base-types.js";
 import {
   NotFoundError,
   DomainError,
   InsufficientFundsError,
   InvalidStateError,
-} from "../utils/Errors.js";
+} from "@app/utils";
 import { TRANSACTION_STATUS } from "../types/base-types.js";
 
 export class TransactionRepository {
@@ -202,7 +202,7 @@ export class TransactionRepository {
         await this.markTransactionFailed(checkout_id);
       } else if (error instanceof InvalidStateError) {
         console.warn(
-          `Warning: Transaction ${checkout_id} is in invalid state during processing: ${error.message}`,
+          `Warning: Transaction ${checkout_id} is in invalid state during processing: ${(error as Error).message}`,
         );
       } else {
         console.error(

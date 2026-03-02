@@ -1,5 +1,5 @@
 import { Router } from "express";
-import StkPushController from "../controller/StkPush.controller.js";
+import StkPushController from "../controllers/StkPush.controller.js";
 
 const stkRoute = Router();
 

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { BaseError } from "../utils/errors/Errors.js";
+import { BaseError } from "@app/utils";
 
 export function errorHandler(
   err: unknown,

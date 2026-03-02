@@ -1,7 +1,7 @@
 import { Router } from "express";
 // import type { Request, Response } from "express";
-// import { addJob } from "../../../../shared/queue/queue.js";
-// import db from "../../../../shared/db/client.js";
+// import { addJob } from "@app/queue";
+// import db from "@app/db";
 
 const router = Router();
 

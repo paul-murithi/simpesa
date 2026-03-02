@@ -1,32 +1,19 @@
-import express from "express";
-import type { Request, Response } from "express";
-import testRouter from "./routes/test.js";
-import cors from "cors";
-import stkRoute from "./routes/stkpush.js";
-import { errorHandler } from "./middleware/errorHandler.js";
+import "dotenv/config";
+import app from "./server.js";
+import { connectRedis } from "./lib/redisClient.js";
+const PORT = process.env.PORT || 3000;
 
-const app = express();
+async function startServer() {
+  try {
+    await connectRedis();
 
-app.get("/health", (req: Request, res: Response) => res.send("Server healthy"));
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
 
-// CORS middleware
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
-    credentials: true,
-  }),
-);
-
-// Body parser middleware
-app.use(express.json());
-
-// Routes
-app.use("/api", testRouter);
-app.use("/stkpush", stkRoute);
-
-// Error handling middleware
-app.use(errorHandler);
-
-export default app;
+startServer();

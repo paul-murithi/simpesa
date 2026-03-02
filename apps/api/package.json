@@ -1,0 +1,28 @@
+{
+  "name": "@app/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@app/db": "*",
+    "@app/queue": "*",
+    "@app/types": "*",
+    "@app/utils": "*",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.17.1",
+    "pino": "^10.3.0",
+    "pino-http": "^11.0.0",
+    "redis": "^5.10.0",
+    "zod": "^4.3.6"
+  }
+}

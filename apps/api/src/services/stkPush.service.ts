@@ -1,10 +1,10 @@
-import { TransactionRepository } from "../../../../shared/db/repositories/transaction.repository.js";
+import { TransactionRepository } from "@app/db";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import type { CreateTransactionDTO } from "../middleware/transaction.validation.js";
-import { redisClient } from "../lib/redis/redisClient.js";
+import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
-import { addPaymentJob } from "../../../../shared/queue/queue.js";
-import { BaseError, ExternalServiceError } from "../utils/errors/Errors.js";
+import { addPaymentJob } from "@app/queue";
+import { BaseError, ExternalServiceError } from "@app/utils";
 
 export class StkPushService {
   private utils = new TransactionUtils();

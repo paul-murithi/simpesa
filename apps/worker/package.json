@@ -1,0 +1,24 @@
+{
+  "name": "@app/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@app/db": "*",
+    "@app/queue": "*",
+    "@app/types": "*",
+    "@app/utils": "*",
+    "bullmq": "^5.66.5",
+    "dotenv": "^16.6.1",
+    "pg": "^8.17.1",
+    "pino": "^10.3.0",
+    "redis": "^5.10.0",
+    "zod": "^4.3.6"
+  }
+}

@@ -1,6 +1,6 @@
-import { Worker } from "bullmq";
-import db from "../../../shared/db/client.js";
-import logger from "./utils/logger.js";
+import { Worker, type Job } from "bullmq";
+import { pool as db } from "@app/db";
+import { logger } from "@app/utils";
 
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
@@ -9,7 +9,7 @@ console.log("Worker running....Waiting for jobs");
 
 const worker = new Worker(
   "payment-tasks",
-  async (job) => {
+  async (job: Job) => {
     const { checkoutId } = job.data;
     const child = logger.child({ checkoutId });
     child.info("Worker started processing job");
@@ -34,7 +34,7 @@ const worker = new Worker(
 );
 
 // events
-worker.on("completed", (job) => {
+worker.on("completed", (job: Job) => {
   logger.info(
     {
       jobId: job.id,
@@ -44,7 +44,7 @@ worker.on("completed", (job) => {
   );
 });
 
-worker.on("failed", (job, error) => {
+worker.on("failed", (job: Job | undefined, error: Error) => {
   logger.error(
     { jobId: job?.id, err: error, checkoutId: job?.data.checkoutId },
     "Job failed",
