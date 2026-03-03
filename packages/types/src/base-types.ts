@@ -93,3 +93,12 @@ export interface UpdateTransactionStatusDTO {
   status: TransactionStatus;
   result_code?: number;
 }
+
+export interface CreateTransactionDTO {
+  checkout_id?: string;
+  short_code: string;
+  phone_number: string;
+  amount: number;
+  external_reference: string;
+  callback_url?: string | undefined;
+}

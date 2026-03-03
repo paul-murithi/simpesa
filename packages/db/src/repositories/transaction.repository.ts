@@ -2,56 +2,54 @@ import { transactionQueries } from "../types/transaction.queries.js";
 import { userQueries } from "../types/user.queries.js";
 import { merchantQueries } from "../types/merchant.queries.js";
 import db from "../client.js";
-import type { Merchant, Transaction, User } from "../types/base-types.js";
+import type { CreateTransactionDTO } from "@app/types";
 import {
   NotFoundError,
   DomainError,
   InsufficientFundsError,
   InvalidStateError,
+  ConflictError,
 } from "@app/utils";
-import { TRANSACTION_STATUS } from "../types/base-types.js";
+import { TRANSACTION_STATUS } from "@app/types";
 
 export class TransactionRepository {
-  async insertNewTransaction(params: {
-    checkoutId: string;
-    externalReference: string;
-    shortCode: string;
-    phoneNumber: string;
-    amount: number;
-    status: string;
-  }) {
-    const values = [
-      params.checkoutId,
-      params.externalReference,
-      params.shortCode,
-      params.phoneNumber,
-      params.amount,
-    ];
-
-    const result = await db.query(transactionQueries.ensureTransaction, values);
-    return result.rows[0];
-  }
-
   /**
    * Phase 1
    * Attempts to lock the rows and validate if balance is sufficient
    * If Success, transitions the state to processing
    */
-  async lockRowsValidate(params: {
-    merchant: Merchant;
-    user: User;
-    transaction: Transaction;
-  }) {
-    const { phone_number } = params.user;
-    const { short_code } = params.merchant;
-    const { amount: transactionAmount, checkout_id } = params.transaction;
+  async lockRowsValidate(transaction: CreateTransactionDTO) {
+    const {
+      amount: transactionAmount,
+      external_reference,
+      short_code,
+      phone_number,
+      checkout_id,
+    } = transaction;
+
     const { PROCESSING, PENDING } = TRANSACTION_STATUS;
 
-    // Create the DB client and begin a transaction
+    // DB client to begin transaction
     const client = await db.connect();
     await client.query("BEGIN");
 
     try {
+      // Idempotent Insert - new transaction record with PENDING status
+      const txResult = await client.query(
+        transactionQueries.ensureTransaction,
+        [
+          checkout_id,
+          external_reference,
+          short_code,
+          phone_number,
+          transactionAmount,
+        ],
+      );
+      if (txResult.rowCount === 0) {
+        await client.query("COMMIT");
+        return;
+      }
+
       // lock and fetch user
       const userResult = await client.query(userQueries.lockUserByPhoneNumber, [
         phone_number,
@@ -108,14 +106,14 @@ export class TransactionRepository {
    * Phase 2
    * Processes the transaction atomically.
    */
-  async processTransaction(
-    transaction: Transaction,
-    user: User,
-    merchant: Merchant,
-  ): Promise<void> {
-    const { checkout_id, amount: transactionAmount } = transaction;
-    const { phone_number } = user;
-    const { short_code } = merchant;
+  async finalizeTransaction(transaction: CreateTransactionDTO): Promise<void> {
+    const {
+      checkout_id,
+      external_reference,
+      short_code,
+      phone_number,
+      amount: transactionAmount,
+    } = transaction;
 
     const client = await db.connect();
 
@@ -199,7 +197,9 @@ export class TransactionRepository {
       const isSystemError = !(error instanceof DomainError);
 
       if (isTerminalBusinessError || isSystemError) {
-        await this.markTransactionFailed(checkout_id);
+        if (checkout_id) {
+          await this.markTransactionFailed(checkout_id);
+        }
       } else if (error instanceof InvalidStateError) {
         console.warn(
           `Warning: Transaction ${checkout_id} is in invalid state during processing: ${(error as Error).message}`,

@@ -1,5 +1,5 @@
 import crypto, { Hash, randomUUID } from "node:crypto";
-import type { CreateTransactionDTO } from "../middleware/transaction.validation.js";
+import type { CreateTransactionDTO } from "@app/types";
 
 export class TransactionUtils {
   /**
@@ -17,6 +17,9 @@ export class TransactionUtils {
     return hash;
   }
   generateCheckoutId(): string {
+    return randomUUID();
+  }
+  generateMerchantRequestId(): string {
     return randomUUID();
   }
 }

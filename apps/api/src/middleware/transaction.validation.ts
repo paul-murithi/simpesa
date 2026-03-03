@@ -14,5 +14,3 @@ export const createTransactionSchema = z.object({
     .url("A valid CallbackURL is required for STK Push")
     .optional(),
 });
-
-export type CreateTransactionDTO = z.infer<typeof createTransactionSchema>;

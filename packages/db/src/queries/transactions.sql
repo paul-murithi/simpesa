@@ -16,7 +16,9 @@ VALUES (
     $5,-- Amount
     'PENDING',
     NOW() + INTERVAL '15 minutes'
-) RETURNING request_id;
+)
+ON CONFLICT (checkout_id) DO NOTHING
+RETURNING *;
 
 
 -- name: markTransactionSuccess
