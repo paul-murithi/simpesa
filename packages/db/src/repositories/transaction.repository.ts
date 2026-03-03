@@ -27,7 +27,7 @@ export class TransactionRepository {
       checkout_id,
     } = transaction;
 
-    const { PROCESSING, PENDING } = TRANSACTION_STATUS;
+    const { PROCESSING, PENDING, SUCCESS, FAILED } = TRANSACTION_STATUS;
 
     // DB client to begin transaction
     const client = await db.connect();
@@ -46,11 +46,29 @@ export class TransactionRepository {
         ],
       );
       if (txResult.rowCount === 0) {
-        await client.query("COMMIT");
-        return;
+        const statusResult = await client.query(
+          transactionQueries.getTransactionStatusByCheckoutId,
+          [checkout_id],
+        );
+        const existingStatus = statusResult.rows[0]?.status;
+
+        if (existingStatus === SUCCESS || existingStatus === FAILED) {
+          console.warn(
+            `Warning: Terminal state revert attempt for checkout_id ${checkout_id} which is already ${existingStatus}. Ignoring duplicate request.`,
+          );
+          await client.query("COMMIT");
+          return;
+        }
+        if (existingStatus === PROCESSING) {
+          console.warn(
+            `Warning: In-flight duplicate attempt for checkout_id ${checkout_id} which is currently PROCESSING. Ignoring duplicate request.`,
+          );
+          await client.query("COMMIT");
+          return;
+        }
       }
 
-      // lock and fetch user
+      // lock and fetch userh
       const userResult = await client.query(userQueries.lockUserByPhoneNumber, [
         phone_number,
       ]);

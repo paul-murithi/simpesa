@@ -14,4 +14,5 @@ interface transactionQueries {
   markTransactionProcessing: string;
   lockTransactionsByCheckoutId: string;
   markTransactionFailed: string;
+  getTransactionStatusByCheckoutId: string;
 }

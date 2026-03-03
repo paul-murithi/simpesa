@@ -20,6 +20,8 @@ VALUES (
 ON CONFLICT (checkout_id) DO NOTHING
 RETURNING *;
 
+-- name: getTransactionStatusByCheckoutId
+SELECT "status" FROM transactions WHERE checkout_id = $1;
 
 -- name: markTransactionSuccess
 UPDATE transactions
