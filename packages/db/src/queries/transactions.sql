@@ -48,4 +48,4 @@ UPDATE transactions
 SET "status" = $1
 WHERE
     checkout_id = $2
-    AND "status" = $3
+    AND "status" = $3;

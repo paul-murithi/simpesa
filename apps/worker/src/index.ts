@@ -1,6 +1,11 @@
-import { Worker, type Job } from "bullmq";
+import { UnrecoverableError, Worker, type Job } from "bullmq";
 import { pool as db } from "@app/db";
-import { ExternalServiceError, logger } from "@app/utils";
+import {
+  InsufficientFundsError,
+  InvalidStateError,
+  logger,
+  NotFoundError,
+} from "@app/utils";
 import type { CreateTransactionDTO } from "@app/types";
 import { TransactionService } from "./services/transaction.service.js";
 
@@ -17,26 +22,31 @@ const worker = new Worker<CreateTransactionDTO, void>(
     const checkout_id = job.id as string;
 
     if (!checkout_id)
-      throw new ExternalServiceError(
-        "[Worker] Missing job ID",
-        "Job ID is required to process the transaction.",
+      throw new UnrecoverableError(
+        "Job is missing checkout_id, cannot process transaction.",
       );
 
     const child = logger.child({ checkoutId: checkout_id });
     child.info("Worker started processing job");
 
     // Orchestrate the transaction processing logic
-    await service.processTransaction(transactionalData);
-
-    // TODO: Implement actual payment processing logic (DB transaction, locking, etc.)
-
-    child.info(
-      { checkoutId: checkout_id },
-      "Payment processing for transaction",
-    );
-
-    // Simulate payment processing delay
-    await new Promise((resolve) => setTimeout(resolve, 8000));
+    try {
+      await service.processTransaction(transactionalData);
+    } catch (error) {
+      if (
+        error instanceof InsufficientFundsError ||
+        error instanceof NotFoundError ||
+        error instanceof InvalidStateError
+      ) {
+        child.warn(
+          { error },
+          "Unrecoverable business error — skipping retries",
+        );
+        throw new UnrecoverableError((error as Error).message);
+      }
+      // Transient errors for BullMQ retry
+      throw error;
+    }
 
     child.info("Worker completed processing job");
   },
@@ -62,7 +72,7 @@ worker.on("completed", (job: Job) => {
 
 worker.on("failed", (job: Job | undefined, error: Error) => {
   logger.error(
-    { jobId: job?.id, err: error, checkoutId: job?.data.checkout_id },
+    { jobId: job?.id, error: error.message, checkoutId: job?.data.checkout_id },
     "Job failed",
   );
 });

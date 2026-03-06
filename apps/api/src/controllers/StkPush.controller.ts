@@ -15,7 +15,10 @@ export default async function StkPushController(req: Request, res: Response) {
 
   if (!result.success) {
     const formattedErrors = z.treeifyError(result.error).errors;
-
+    logger.error(
+      { err: result.error.message, operation: "validateRequest" },
+      "Validation failed for incoming STK Push request",
+    );
     throw new ValidationError(
       "Invalid request data",
       `Check your phone_number format and ensure amount is a positive number.`,

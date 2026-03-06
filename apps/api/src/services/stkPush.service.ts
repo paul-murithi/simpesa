@@ -3,12 +3,12 @@ import { TransactionUtils } from "../utils/transaction.utils.js";
 import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
 import { addPaymentJob } from "@app/queue";
-import { BaseError, ExternalServiceError } from "@app/utils";
+import { ExternalServiceError } from "@app/utils";
 import type { CreateTransactionDTO } from "@app/types";
+import { logger } from "@app/utils";
 
 export class StkPushService {
   private utils = new TransactionUtils();
-  private repo = new TransactionRepository();
 
   /**
    * Attempts to lock a fingerprint in Redis.
@@ -57,12 +57,15 @@ export class StkPushService {
    * @param data - Transaction request received from the user
    */
   async queuePaymentTask(transaction: CreateTransactionDTO) {
+    const childLogger = logger.child({ checkoutId: transaction.checkout_id });
     try {
       await addPaymentJob(transaction);
-      console.log(
-        `[Queue] Job queued for Checkout: ${transaction.checkout_id}`,
-      );
+      childLogger.info("[Queue] Job queued for Checkout");
     } catch (error) {
+      childLogger.error({
+        error: error,
+        message: "Failed to queue payment job",
+      });
       throw new ExternalServiceError(
         "Failed to queue payment job",
         error,
