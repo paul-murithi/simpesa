@@ -49,3 +49,12 @@ SET "status" = $1
 WHERE
     checkout_id = $2
     AND "status" = $3;
+
+-- name: hasActiveTransactionForUser
+SELECT EXISTS (
+    SELECT 1
+    FROM transactions
+    WHERE phone_number = $1
+    AND "status" = 'PROCESSING'
+    AND checkout_id != $2
+) AS has_active_transaction;

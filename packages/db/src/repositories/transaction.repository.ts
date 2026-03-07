@@ -9,6 +9,7 @@ import {
   InsufficientFundsError,
   InvalidStateError,
   logger,
+  ConflictError,
 } from "@app/utils";
 import { TRANSACTION_STATUS } from "@app/types";
 
@@ -64,13 +65,29 @@ export class TransactionRepository {
     logger.info("Started Phase-1 Database Transaction");
 
     try {
-      // lock and fetch userh
+      // Lock and fetch user
       const userResult = await client.query(userQueries.lockUserByPhoneNumber, [
         phone_number,
       ]);
+
       if (userResult.rowCount === 0) {
         child.error("User with given phone number not found");
         throw new NotFoundError("User with given phone number not found");
+      }
+
+      // Check if user already has a PROCESSING transaction
+      const activeTxExists = (
+        await client.query(transactionQueries.hasActiveTransactionForUser, [
+          phone_number,
+          checkout_id,
+        ])
+      ).rows[0].has_active_transaction;
+
+      if (activeTxExists) {
+        child.error("User locked in another transaction request");
+        throw new ConflictError(
+          "User has an active transaction in PROCESSING state",
+        );
       }
 
       const currentBalance = userResult.rows[0].balance;
