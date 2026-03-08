@@ -295,4 +295,14 @@ export class TransactionRepository {
       });
     }
   }
+
+  async findUserByPhoneNumber(phone_number: string) {
+    return await db.query(userQueries.findUserByPhoneNumber, [phone_number]);
+  }
+
+  async findMerchantByShortCode(short_code: string) {
+    return await db.query(merchantQueries.findMerchantByShortCode, [
+      short_code,
+    ]);
+  }
 }

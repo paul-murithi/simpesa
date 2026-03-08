@@ -12,7 +12,8 @@ import { TransactionService } from "./services/transaction.service.js";
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
 
-console.log("Worker running....Waiting for jobs");
+logger.info("Worker is starting...");
+
 const service = new TransactionService();
 
 const worker = new Worker<CreateTransactionDTO, void>(
@@ -21,16 +22,23 @@ const worker = new Worker<CreateTransactionDTO, void>(
     const transactionalData = job.data;
     const checkout_id = job.id as string;
 
-    if (!checkout_id)
+    if (!checkout_id) {
+      logger.error("Job is missing checkout_id, cannot process transaction.");
       throw new UnrecoverableError(
-        "Job is missing checkout_id, cannot process transaction.",
+        "[Worker] Job is missing checkout_id, cannot process transaction.",
       );
+    }
 
     const child = logger.child({ checkoutId: checkout_id });
     child.info("Worker started processing job");
 
     // Orchestrate the transaction processing logic
     try {
+      // Check if user and merchant exist before processing
+      await service.userAndMerchantExist(
+        transactionalData.short_code,
+        transactionalData.phone_number,
+      );
       await service.processTransaction(transactionalData);
     } catch (error) {
       if (
@@ -38,7 +46,7 @@ const worker = new Worker<CreateTransactionDTO, void>(
         error instanceof NotFoundError ||
         error instanceof InvalidStateError
       ) {
-        child.warn(
+        child.error(
           { error },
           "Unrecoverable business error — skipping retries",
         );

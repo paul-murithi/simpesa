@@ -10,4 +10,5 @@ interface UserQueries {
   DeleteUser: string;
   lockUserByPhoneNumber: string;
   debitUser: string;
+  findUserByPhoneNumber: string;
 }

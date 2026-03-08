@@ -7,3 +7,6 @@ FOR UPDATE;
 UPDATE users
 SET balance = balance - $1
 WHERE phone_number = $2;
+
+-- name: findUserByPhoneNumber
+SELECT * FROM users WHERE phone_number = $1;

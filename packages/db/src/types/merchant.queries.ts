@@ -6,4 +6,5 @@ interface MerchantQueries {
   [key: string]: string;
   lockMerchantByShortCode: string;
   creditMerchant: string;
+  findMerchantByShortCode: string;
 }
