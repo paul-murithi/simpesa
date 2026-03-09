@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "references": [
+    { "path": "../db" },
+    { "path": "../queue" },
+    { "path": "../types" },
+    { "path": "../utils" },
+    { "path": "../../apps/api" },
+    { "path": "../../apps/worker" }
+  ],
+  "include": ["src/**/*"]
+}

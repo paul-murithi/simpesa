@@ -3,7 +3,11 @@ import pkg from "pg";
 const { Pool } = pkg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  // Default DB
+  // connectionString: process.env.DATABASE_URL,
+
+  // For testing purposes
+  connectionString: process.env.TEST_DATABASE_URL,
 });
 
 pool.on("error", (err) => {
