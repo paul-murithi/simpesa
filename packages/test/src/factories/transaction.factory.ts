@@ -1,13 +1,12 @@
-export function transactionFactory(overrides = {}) {
+import { randomUUID } from "node:crypto";
+
+export function createTransaction(overrides = {}) {
   return {
-    id: "txn_123",
-    amount: 1000,
-    currency: "USD",
-    status: "pending",
-    merchant_id: "mrc_123",
-    user_id: "usr_123",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    checkout_id: randomUUID(),
+    external_reference: "ext_ref_456",
+    short_code: "174379",
+    phone_number: "254712345678",
+    amount: 100,
     ...overrides,
   };
 }

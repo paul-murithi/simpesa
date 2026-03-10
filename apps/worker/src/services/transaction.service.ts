@@ -1,6 +1,6 @@
 import { TransactionRepository } from "@app/db";
 import type { CreateTransactionDTO } from "@app/types";
-import { NotFoundError } from "packages/utils/src/errors.js";
+import { NotFoundError } from "@app/utils";
 
 const repo = new TransactionRepository();
 export class TransactionService {

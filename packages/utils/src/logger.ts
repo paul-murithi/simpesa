@@ -1,7 +1,8 @@
+import "dotenv/config";
 import pino from "pino";
 
 const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.NODE_ENV === "test" ? "silent" : "info",
   transport: {
     target: "pino-pretty",
     options: {
