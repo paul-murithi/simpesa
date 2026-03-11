@@ -1,5 +1,7 @@
 /* Utility Types */
 
+import type { ZodError } from "zod";
+
 export type UUID = string;
 export type ISODateString = string;
 
@@ -24,7 +26,17 @@ export const TRANSACTION_STATUS = {
 export type TransactionStatus =
   (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
 
-export type UserStatus = "ACTIVE" | "INACTIVE" | "BLOCKED";
+export const UserStatus = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  BLOCKED: "BLOCKED",
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
+/**Validation */
+export type ValidationResult =
+  | { isValid: true; data: CreateTransactionDTO }
+  | { isValid: false; errors: unknown; rawError: ZodError };
 
 /* 
    Merchants Table

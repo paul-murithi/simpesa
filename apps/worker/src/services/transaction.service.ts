@@ -1,6 +1,7 @@
 import { TransactionRepository } from "@app/db";
 import type { CreateTransactionDTO } from "@app/types";
-import { NotFoundError } from "@app/utils";
+import { UserStatus } from "@app/types";
+import { ConflictError, NotFoundError } from "@app/utils";
 
 const repo = new TransactionRepository();
 export class TransactionService {
@@ -23,11 +24,19 @@ export class TransactionService {
   }
 
   async userAndMerchantExist(short_code: string, phone_number: string) {
+    const { BLOCKED, INACTIVE } = UserStatus;
     const userResult = await repo.findUserByPhoneNumber(phone_number);
     if (userResult.rowCount === 0) {
       throw new NotFoundError(
         `User with phone number ${phone_number} not found`,
       );
+    }
+    const accountStatus = userResult.rows[0].status;
+
+    if (accountStatus === BLOCKED || accountStatus === INACTIVE) {
+      throw new ConflictError(`
+        User with phone number ${phone_number} account is not active
+        `);
     }
 
     const merchantResult = await repo.findMerchantByShortCode(short_code);

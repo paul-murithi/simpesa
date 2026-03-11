@@ -1,14 +1,28 @@
-import { TransactionRepository } from "@app/db";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
 import { addPaymentJob } from "@app/queue";
-import { ExternalServiceError } from "@app/utils";
-import type { CreateTransactionDTO } from "@app/types";
+import { ExternalServiceError, ValidationError } from "@app/utils";
+import type {
+  CreateTransactionDTO,
+  Transaction,
+  ValidationResult,
+} from "@app/types";
 import { logger } from "@app/utils";
+import { createTransactionSchema } from "../middleware/transaction.validation.js";
 
 export class StkPushService {
   private utils = new TransactionUtils();
+
+  validateStkRequest(data: CreateTransactionDTO): CreateTransactionDTO {
+    const result = createTransactionSchema.safeParse(data);
+
+    if (!result.success) {
+      logger.error("Invalid request data");
+      throw new ValidationError("Invalid request data");
+    }
+    return result.data;
+  }
 
   /**
    * Attempts to lock a fingerprint in Redis.

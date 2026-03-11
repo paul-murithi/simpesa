@@ -20,7 +20,9 @@
       "@app/db": ["packages/db/src"],
       "@app/queue": ["packages/queue/src"],
       "@app/types": ["packages/types/src"],
-      "@app/utils": ["packages/utils/src"]
+      "@app/utils": ["packages/utils/src"],
+      "apps/api/*": ["apps/api/src/*"],
+      "apps/worker/*": ["apps/worker/src/*"]
     }
   }
 }

@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { pool, TransactionRepository } from "@app/db";
-import { InsufficientFundsError, NotFoundError } from "@app/utils";
+import {
+  ConflictError,
+  InsufficientFundsError,
+  NotFoundError,
+} from "@app/utils";
 import { TransactionService } from "../../../../apps/worker/src/services/transaction.service.js";
 import { TRANSACTION_STATUS } from "@app/types";
 import { createTransaction } from "../factories/transaction.factory.js";
@@ -16,6 +20,7 @@ describe("TransactionService - Pre-validation", () => {
   const LOW_BALANCE_USER = "254798765432";
   const INVALID_MERCHANT = "999999";
   const INVALID_USER = "254700000000";
+  const BLOCKED_USER = "254789765432";
 
   beforeEach(async () => {
     await pool.query(
@@ -38,18 +43,6 @@ describe("TransactionService - Pre-validation", () => {
       await expect(
         service.userAndMerchantExist(INVALID_MERCHANT, VALID_USER),
       ).rejects.toThrow(NotFoundError);
-    });
-    it("should process a valid transaction", async () => {
-      const transaction = createTransaction();
-
-      await repo.lockRowsValidate(transaction);
-
-      const { rows } = await pool.query(
-        `SELECT "status" FROM transactions WHERE checkout_id = $1`,
-        [transaction.checkout_id],
-      );
-
-      expect(rows[0].status).toBe(TRANSACTION_STATUS.PROCESSING);
     });
   });
 
@@ -96,6 +89,54 @@ describe("TransactionService - Pre-validation", () => {
         [transaction.checkout_id],
       );
       expect(Number(rows[0].count)).toBe(1);
+    });
+  });
+
+  describe("Valid Transaction", () => {
+    it("should change a valid transaction to PROCESSING", async () => {
+      const transaction = createTransaction();
+
+      await repo.lockRowsValidate(transaction);
+
+      const { rows } = await pool.query(
+        `SELECT "status" FROM transactions WHERE checkout_id = $1`,
+        [transaction.checkout_id],
+      );
+
+      expect(rows[0].status).toBe(TRANSACTION_STATUS.PROCESSING);
+    });
+    it("should keep user balance untouched", async () => {
+      const transaction = createTransaction();
+      const balanceBefore = (
+        await pool.query("SELECT balance FROM users WHERE phone_number = $1", [
+          transaction.phone_number,
+        ])
+      ).rows[0].balance;
+
+      await repo.lockRowsValidate(transaction);
+
+      const { rows } = await pool.query(
+        "SELECT balance FROM users WHERE phone_number = $1",
+        [transaction.phone_number],
+      );
+      const balanceAfter = rows[0].balance;
+
+      expect(balanceBefore).toBe(balanceAfter);
+    });
+  });
+
+  describe("User blocked / inactive", () => {
+    it("should prevent a transaction request involving a blocked user", async () => {
+      const transaction = createTransaction({
+        phone_number: BLOCKED_USER,
+      });
+
+      await expect(
+        service.userAndMerchantExist(
+          transaction.short_code,
+          transaction.phone_number,
+        ),
+      ).rejects.toThrow(ConflictError);
     });
   });
 });

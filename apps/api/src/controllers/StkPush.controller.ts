@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { StkPushService } from "../services/stkPush.service.js";
 import { createTransactionSchema } from "../middleware/transaction.validation.js";
-import z from "zod";
+import z, { string, ZodError } from "zod";
 import { ConflictError, ValidationError } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
@@ -11,21 +11,7 @@ const service = new StkPushService();
 const util = new TransactionUtils();
 
 export default async function StkPushController(req: Request, res: Response) {
-  const result = createTransactionSchema.safeParse(req.body);
-
-  if (!result.success) {
-    const formattedErrors = z.treeifyError(result.error).errors;
-    logger.error(
-      { err: result.error.message, operation: "validateRequest" },
-      "Validation failed for incoming STK Push request",
-    );
-    throw new ValidationError(
-      "Invalid request data",
-      `Check your phone_number format and ensure amount is a positive number.`,
-    );
-  }
-
-  const data: CreateTransactionDTO = result.data;
+  const data = service.validateStkRequest(req.body);
 
   // Generate Redis Fingerprint and attempt to lock
   const lock = await service.tryLockTransaction(data);

@@ -11,4 +11,5 @@ interface UserQueries {
   lockUserByPhoneNumber: string;
   debitUser: string;
   findUserByPhoneNumber: string;
+  findUserByStatus: string;
 }
