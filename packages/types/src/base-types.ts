@@ -38,6 +38,17 @@ export type ValidationResult =
   | { isValid: true; data: CreateTransactionDTO }
   | { isValid: false; errors: unknown; rawError: ZodError };
 
+/**Testing */
+export const testingConstants = {
+  MERCHANT_CODE: "174379",
+  VALID_USER: "254712345678",
+  VALID_USER_B: "254712345679",
+  LOW_BALANCE_USER: "254798765432",
+  INVALID_MERCHANT: "999999",
+  INVALID_USER: "254700000000",
+  BLOCKED_USER: "254789765432",
+};
+
 /* 
    Merchants Table
  */

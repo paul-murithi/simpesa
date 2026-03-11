@@ -9,9 +9,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  console.log({
-    total: pool.totalCount,
-    idle: pool.idleCount,
-    waiting: pool.waitingCount,
-  });
+  // console.log({
+  //   total: pool.totalCount,
+  //   idle: pool.idleCount,
+  //   waiting: pool.waitingCount,
+  // });
 }, 30000);

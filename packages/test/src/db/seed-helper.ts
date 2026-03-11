@@ -6,7 +6,8 @@ export async function seedUsers() {
     VALUES 
       ('254712345678', '1234', 1000.00, 'ACTIVE'), -- normal balance
       ('254798765432', '1234', 50.00, 'ACTIVE'), -- low balance
-      ('254789765432', '1234', 50.00, 'BLOCKED') -- low balance
+      ('254789765432', '1234', 50.00, 'BLOCKED'), -- Blocked user
+      ('254712345679', '1234', 100.00, 'ACTIVE') -- normal balance User B
   `);
 }
 
