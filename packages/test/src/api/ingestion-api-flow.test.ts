@@ -6,16 +6,11 @@ import { seedMerchant, seedUsers } from "../db/seed-helper.js";
 import { ValidationError } from "@app/utils";
 import { TransactionUtils } from "apps/api/utils/transaction.utils.js";
 import { testingConstants } from "@app/types";
-import crypto, { randomUUID } from "crypto";
+import crypto from "crypto";
 
 describe("API layer validation", () => {
   let service: StkPushService;
   let utils: TransactionUtils;
-
-  // Mock redisClient
-  const redisClient = {
-    set: vi.fn(),
-  };
 
   beforeEach(async () => {
     await pool.query(

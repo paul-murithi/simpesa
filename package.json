@@ -57,6 +57,7 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@types/redis": "^4.0.10",
+    "@types/supertest": "^7.2.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "@vitest/coverage-v8": "^4.0.18",
     "concurrently": "^8.2.0",

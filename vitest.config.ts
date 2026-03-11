@@ -15,6 +15,9 @@ export default defineConfig({
   },
   test: {
     setupFiles: ["./packages/test/src/setup.ts"],
+    sequence: {
+      concurrent: false,
+    },
     environment: "node",
     include: ["packages/test/**/*.test.ts"],
     reporters: ["verbose"],
