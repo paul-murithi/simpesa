@@ -3,15 +3,19 @@ import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
 import { addPaymentJob } from "@app/queue";
 import { ExternalServiceError, ValidationError } from "@app/utils";
-import type {
-  CreateTransactionDTO,
-  CreateTransactionRequestDTO,
+import {
+  TRANSACTION_STATUS,
+  type CreateTransactionDTO,
+  type CreateTransactionRequestDTO,
+  type TransactionStatus,
 } from "@app/types";
 import { logger } from "@app/utils";
 import { createTransactionSchema } from "../middleware/transaction.validation.js";
+import { TransactionRepository } from "@app/db";
 
 export class StkPushService {
   private utils = new TransactionUtils();
+  private repo = new TransactionRepository();
 
   validateStkRequest(
     data: CreateTransactionRequestDTO,
@@ -23,6 +27,10 @@ export class StkPushService {
       throw new ValidationError("Invalid request data");
     }
     return result.data;
+  }
+
+  async insertTransaction(transaction: CreateTransactionDTO) {
+    await this.repo.insertNewTransaction(transaction);
   }
 
   /**
@@ -87,5 +95,12 @@ export class StkPushService {
         "An error occurred while queuing the payment job.",
       );
     }
+  }
+
+  async markTransactionFailed(
+    checkout_id: string,
+    fromStatus: TransactionStatus,
+  ) {
+    return await this.repo.markTransactionFailed(checkout_id, fromStatus);
   }
 }

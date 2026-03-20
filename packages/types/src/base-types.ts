@@ -132,3 +132,48 @@ export type CreateTransactionRequestDTO = {
 export type CreateTransactionDTO = CreateTransactionRequestDTO & {
   checkout_id: string;
 };
+
+/**Webhook */
+export type WebHookPayLoad = {
+  event: "TRANSACTION_SUCCESS" | "TRANSACTION_FAILED";
+  checkout_id: string;
+  amount: number;
+  external_reference: string;
+  status: "SUCCESS" | "FAILED";
+  timestamp: string;
+};
+
+/**Metadata */
+export type TransactionMetadata = {
+  request: {
+    body: Record<string, any>;
+    headers?: Record<string, string>;
+    timestamp: string;
+  };
+
+  response?: {
+    body: Record<string, any>;
+    statusCode?: number;
+    timestamp: string;
+  };
+
+  callback?: {
+    body: Record<string, any>;
+    attempts?: number;
+    lastAttemptAt?: string;
+  };
+
+  simulation?: {
+    mode?: "AUTO" | "MANUAL";
+    pinEntered?: boolean;
+    pinCorrect?: boolean;
+  };
+
+  error?: {
+    message: string;
+    code?: number;
+    stack?: string;
+  };
+
+  [key: string]: any;
+};

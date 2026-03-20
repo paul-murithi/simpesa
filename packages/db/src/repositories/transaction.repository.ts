@@ -35,32 +35,20 @@ export class TransactionRepository {
 
     const { PROCESSING, PENDING, SUCCESS, FAILED } = TRANSACTION_STATUS;
 
-    // Record transaction with idempotent insert if not exists, otherwise fetch existing record to handle idempotency for already-terminal or in-flight states
-    const existing = await db.query(transactionQueries.ensureTransaction, [
-      checkout_id,
-      external_reference,
-      short_code,
-      phone_number,
-      transactionAmount,
-    ]);
-
-    // Handle idempotency for already-terminal or in-flight states
-    if (existing.rowCount === 0) {
-      const statusResult = await db.query(
-        transactionQueries.getTransactionStatusByCheckoutId,
-        [checkout_id],
+    const statusResult = await db.query(
+      transactionQueries.getTransactionStatusByCheckoutId,
+      [checkout_id],
+    );
+    const status = statusResult.rows[0]?.status;
+    if (status === SUCCESS || status === FAILED) {
+      child.error(
+        `Terminal state revert attempt. Already ${status}. Ignoring.`,
       );
-      const existingStatus = statusResult.rows[0]?.status;
-      if (existingStatus === SUCCESS || existingStatus === FAILED) {
-        child.error(
-          `Terminal state revert attempt. Already ${existingStatus}. Ignoring.`,
-        );
-        return;
-      }
-      if (existingStatus === PROCESSING) {
-        child.error(`In-flight duplicate. Currently PROCESSING. Ignoring.`);
-        return;
-      }
+      return;
+    }
+    if (status === PROCESSING) {
+      child.error(`In-flight duplicate. Currently PROCESSING. Ignoring.`);
+      return;
     }
 
     // DB client to begin transaction
@@ -289,7 +277,7 @@ export class TransactionRepository {
   /**
    * Helper method to mark a transaction as failed.
    */
-  private async markTransactionFailed(
+  async markTransactionFailed(
     checkout_id: string,
     fromStatus: TransactionStatus,
   ): Promise<void> {
@@ -317,6 +305,23 @@ export class TransactionRepository {
   async findMerchantByShortCode(short_code: string) {
     return await db.query(merchantQueries.findMerchantByShortCode, [
       short_code,
+    ]);
+  }
+
+  async insertNewTransaction(transaction: CreateTransactionDTO) {
+    const {
+      checkout_id,
+      external_reference,
+      amount: transactionAmount,
+      phone_number,
+      short_code,
+    } = transaction;
+    return await db.query(transactionQueries.ensureTransaction, [
+      checkout_id,
+      external_reference,
+      short_code,
+      phone_number,
+      transactionAmount,
     ]);
   }
 }

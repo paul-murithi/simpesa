@@ -3,6 +3,7 @@ import { StkPushService } from "../services/stkPush.service.js";
 import { ConflictError } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
+import { TRANSACTION_STATUS } from "@app/types";
 
 const service = new StkPushService();
 const util = new TransactionUtils();
@@ -22,37 +23,49 @@ export default async function StkPushController(req: Request, res: Response) {
 
   const checkOutId = util.generateCheckoutId();
   const merchantRequestId = util.generateMerchantRequestId();
-
-  const child = logger.child({ checkoutId: checkOutId });
-
-  service
-    .queuePaymentTask({ ...data, checkout_id: checkOutId })
-    .then(() => {
-      child.info(
-        {
-          operation: "queuePaymentTask",
-          phoneNumber: data.phone_number,
-          amount: data.amount,
-          short_code: data.short_code,
-        },
-        "Transaction queued successfully",
-      );
-    })
-    .catch(async (error) => {
-      if (lock) {
-        await service.releaseLock(lock.key, lock.token);
-      }
-
-      child.error(
-        { err: error, operation: "queuePaymentTask", checkOutId },
-        "Failed to queue payment task",
-      );
-    });
-
-  return res.status(200).json({
+  const acknowledgement = {
     MerchantRequestID: merchantRequestId,
     CheckoutRequestID: checkOutId,
     ResponseCode: "0",
     ResponseDescription: "Success. Request accepted for processing",
-  });
+  };
+
+  const child = logger.child({ checkoutId: checkOutId });
+
+  // 1. Record transaction to the DB
+  try {
+    await service.insertTransaction({ ...data, checkout_id: checkOutId });
+    child.info(
+      { operation: "PaymentDBInsert" },
+      "Transaction recorded successfully",
+    );
+  } catch (error) {
+    child.error(
+      { err: error, operation: "PaymentDBInsert" },
+      "Abort: DB insert failed",
+    );
+    if (lock) await service.releaseLock(lock.key, lock.token);
+    return res.status(200).json(acknowledgement);
+  }
+
+  // 2. Enqueue transaction
+  try {
+    await service.queuePaymentTask({ ...data, checkout_id: checkOutId });
+    child.info(
+      { operation: "queuePaymentTask" },
+      "Transaction queued successfully",
+    );
+  } catch (error) {
+    child.error(
+      { err: error, operation: "queuePaymentTask" },
+      "Enqueue failed — compensating",
+    );
+
+    await service.markTransactionFailed(checkOutId, TRANSACTION_STATUS.PENDING);
+    if (lock) await service.releaseLock(lock.key, lock.token);
+    return res.status(200).json(acknowledgement);
+  }
+
+  // 3. Always 200
+  return res.status(200).json(acknowledgement);
 }

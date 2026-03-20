@@ -34,11 +34,6 @@ const worker = new Worker<CreateTransactionDTO, void>(
 
     // Orchestrate the transaction processing logic
     try {
-      // Check if user and merchant exist before processing
-      await service.userAndMerchantExist(
-        transactionalData.short_code,
-        transactionalData.phone_number,
-      );
       await service.processTransaction(transactionalData);
     } catch (error) {
       if (
