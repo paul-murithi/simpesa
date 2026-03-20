@@ -38,6 +38,10 @@ export type ValidationResult =
   | { isValid: true; data: CreateTransactionDTO }
   | { isValid: false; errors: unknown; rawError: ZodError };
 
+export type ProcessTransactionResult =
+  | { success: true; checkout_id: string }
+  | { success: false; checkout_id: string; reason?: string };
+
 /**Testing */
 export const testingConstants = {
   MERCHANT_CODE: "174379",
@@ -117,11 +121,14 @@ export interface UpdateTransactionStatusDTO {
   result_code?: number;
 }
 
-export interface CreateTransactionDTO {
-  checkout_id?: string;
+export type CreateTransactionRequestDTO = {
   short_code: string;
   phone_number: string;
   amount: number;
   external_reference: string;
   callback_url?: string | undefined;
-}
+};
+
+export type CreateTransactionDTO = CreateTransactionRequestDTO & {
+  checkout_id: string;
+};

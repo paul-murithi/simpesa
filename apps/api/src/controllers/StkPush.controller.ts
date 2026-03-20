@@ -1,11 +1,8 @@
 import type { Request, Response } from "express";
 import { StkPushService } from "../services/stkPush.service.js";
-import { createTransactionSchema } from "../middleware/transaction.validation.js";
-import z, { string, ZodError } from "zod";
-import { ConflictError, ValidationError } from "@app/utils";
+import { ConflictError } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
-import type { CreateTransactionDTO } from "@app/types";
 
 const service = new StkPushService();
 const util = new TransactionUtils();

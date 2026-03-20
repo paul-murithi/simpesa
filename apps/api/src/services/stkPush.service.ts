@@ -5,8 +5,7 @@ import { addPaymentJob } from "@app/queue";
 import { ExternalServiceError, ValidationError } from "@app/utils";
 import type {
   CreateTransactionDTO,
-  Transaction,
-  ValidationResult,
+  CreateTransactionRequestDTO,
 } from "@app/types";
 import { logger } from "@app/utils";
 import { createTransactionSchema } from "../middleware/transaction.validation.js";
@@ -14,7 +13,9 @@ import { createTransactionSchema } from "../middleware/transaction.validation.js
 export class StkPushService {
   private utils = new TransactionUtils();
 
-  validateStkRequest(data: CreateTransactionDTO): CreateTransactionDTO {
+  validateStkRequest(
+    data: CreateTransactionRequestDTO,
+  ): CreateTransactionRequestDTO {
     const result = createTransactionSchema.safeParse(data);
 
     if (!result.success) {
@@ -29,7 +30,7 @@ export class StkPushService {
    * Returns true if successful (new), false if already exists (duplicate).
    */
   async tryLockTransaction(
-    data: CreateTransactionDTO,
+    data: CreateTransactionRequestDTO,
   ): Promise<null | { key: string; token: string }> {
     const hash = this.utils.generateRedisFingerprint(data);
     const key = `fp:${hash}`;

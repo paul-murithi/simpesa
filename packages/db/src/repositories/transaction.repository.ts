@@ -2,7 +2,11 @@ import { transactionQueries } from "../types/transaction.queries.js";
 import { userQueries } from "../types/user.queries.js";
 import { merchantQueries } from "../types/merchant.queries.js";
 import db from "../client.js";
-import type { CreateTransactionDTO, TransactionStatus } from "@app/types";
+import type {
+  CreateTransactionDTO,
+  ProcessTransactionResult,
+  TransactionStatus,
+} from "@app/types";
 import {
   NotFoundError,
   DomainError,
@@ -145,7 +149,9 @@ export class TransactionRepository {
    * Phase 2
    * Processes the transaction atomically.
    */
-  async finalizeTransaction(transaction: CreateTransactionDTO): Promise<void> {
+  async finalizeTransaction(
+    transaction: CreateTransactionDTO,
+  ): Promise<ProcessTransactionResult> {
     const {
       checkout_id,
       external_reference,
@@ -226,24 +232,24 @@ export class TransactionRepository {
       ]);
 
       await client.query("COMMIT");
+      return {
+        success: true,
+        checkout_id,
+      };
     } catch (error) {
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
-        console.error(
-          `Critical: Failed to rollback transaction ${checkout_id} in DB`,
-          rollbackError,
-        );
         child.error({
-          error: error,
+          error: rollbackError,
           message: "Critical: Failed to rollback transaction in DB",
         });
       }
 
-      // Record FAILED state
       const isTerminalBusinessError =
         error instanceof InsufficientFundsError ||
         error instanceof NotFoundError;
+
       const isSystemError = !(error instanceof DomainError);
 
       if (isTerminalBusinessError || isSystemError) {
@@ -254,17 +260,25 @@ export class TransactionRepository {
           );
           child.info("Transaction state updated to FAILED");
         }
-      } else if (error instanceof InvalidStateError) {
-        child.warn({
-          error: error,
-          message: "Warning: Transaction is in invalid state during processing",
-        });
-      } else {
-        child.error({
-          error: error,
-          message: "Critical: Unexpected error during processing transaction.",
-        });
+
+        return {
+          success: false,
+          checkout_id,
+        };
       }
+
+      if (error instanceof InvalidStateError) {
+        child.warn({
+          error,
+          message: "Transaction is in invalid state during processing",
+        });
+        throw error;
+      }
+
+      child.error({
+        error,
+        message: "Unexpected error during processing transaction.",
+      });
 
       throw error;
     } finally {
