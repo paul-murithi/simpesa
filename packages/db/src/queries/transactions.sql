@@ -5,6 +5,8 @@ INSERT INTO transactions (
     short_code,
     phone_number,
     amount,
+    metadata,
+    merchant_request_id,
     "status",
     expires_at
 )
@@ -14,6 +16,8 @@ VALUES (
     $3,-- Merchant ShortCode
     $4,-- User Phone Number
     $5,-- Amount
+    $6,-- Metadata
+    $7,--merchant_request_id
     'PENDING',
     NOW() + INTERVAL '15 minutes'
 )

@@ -4,10 +4,9 @@ const { Pool } = pkg;
 
 const pool = new Pool({
   // Default DB
-  // connectionString: process.env.DATABASE_URL,
-
+  connectionString: process.env.DATABASE_URL,
   // For testing purposes
-  connectionString: process.env.TEST_DATABASE_URL,
+  // connectionString: process.env.TEST_DATABASE_URL,
 });
 
 pool.on("error", (err) => {

@@ -1,6 +1,11 @@
 /* Utility Types */
 
 import type { ZodError } from "zod";
+import type { Request } from "express";
+
+export interface StampedRequest<Body = any> extends Request<any, any, Body> {
+  timestamp?: string;
+}
 
 export type UUID = string;
 export type ISODateString = string;
@@ -116,30 +121,29 @@ export interface Transaction {
   expires_at: Date;
 }
 
+export type TransactionBase = {
+  short_code: string;
+  phone_number: string;
+  amount: number;
+  external_reference: string;
+};
+
 export interface UpdateTransactionStatusDTO {
   status: TransactionStatus;
   result_code?: number;
 }
 
-export type CreateTransactionRequestDTO = {
-  short_code: string;
-  phone_number: string;
-  amount: number;
-  external_reference: string;
+export type CreateTransactionRequestDTO = TransactionBase & {
   callback_url?: string | undefined;
 };
 
 export type CreateTransactionDTO = CreateTransactionRequestDTO & {
   checkout_id: string;
+  merchant_request_id: string;
 };
 
 /**STK Push */
-export type StkPushRequest = {
-  short_code: string;
-  phone_number: string;
-  amount: number;
-  external_reference: string;
-};
+export type StkPushRequest = TransactionBase;
 
 export type StkPushResponse = {
   MerchantRequestID: string;
@@ -159,17 +163,33 @@ export type WebHookPayLoad = {
 };
 
 /**Metadata */
+export type ApiMetadataIdentifiers = {
+  merchantRequestId: string;
+  checkoutRequestId: string;
+};
+export type ApiRequest = {
+  headers: any;
+  body: any;
+  timestamp: string;
+  query?: any;
+  ip?: string;
+  method?: string;
+  url?: string;
+};
+export type ApiTransactionMetadata = {
+  request: ApiRequest;
+  identifiers: ApiMetadataIdentifiers;
+};
+
 export type TransactionMetadata = {
   request: {
-    body: StkPushRequest;
+    body: Request;
     headers?: Record<string, string>;
-    timestamp: string;
   };
 
   response?: {
     body: StkPushResponse;
     statusCode?: number;
-    timestamp: string;
   };
 
   callback?: {
@@ -192,3 +212,5 @@ export type TransactionMetadata = {
 
   [key: string]: any;
 };
+
+export type MetadataPatch = Partial<TransactionMetadata>;

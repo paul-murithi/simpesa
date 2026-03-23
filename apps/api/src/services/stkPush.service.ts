@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
@@ -5,8 +6,12 @@ import { addPaymentJob } from "@app/queue";
 import { ExternalServiceError, ValidationError } from "@app/utils";
 import {
   TRANSACTION_STATUS,
+  type ApiMetadataIdentifiers,
+  type ApiRequest,
+  type ApiTransactionMetadata,
   type CreateTransactionDTO,
   type CreateTransactionRequestDTO,
+  type StkPushRequest,
   type StkPushResponse,
   type TransactionStatus,
 } from "@app/types";
@@ -30,8 +35,8 @@ export class StkPushService {
     return result.data;
   }
 
-  async insertTransaction(transaction: CreateTransactionDTO) {
-    await this.repo.insertNewTransaction(transaction);
+  async insertTransaction(transaction: CreateTransactionDTO, metadata: string) {
+    await this.repo.insertNewTransaction(transaction, metadata);
   }
 
   /**
@@ -115,5 +120,17 @@ export class StkPushService {
       ResponseCode: "0",
       ResponseDescription: "Success. Request accepted for processing",
     };
+  }
+
+  buildApiPayload(
+    request: ApiRequest,
+    identifiers: ApiMetadataIdentifiers,
+  ): ApiTransactionMetadata {
+    const metadata = {
+      request: request,
+      identifiers: identifiers,
+    };
+
+    return metadata;
   }
 }

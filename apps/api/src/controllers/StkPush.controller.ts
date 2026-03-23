@@ -5,6 +5,9 @@ import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
 import {
   TRANSACTION_STATUS,
+  type ApiMetadataIdentifiers,
+  type ApiRequest,
+  type StampedRequest,
   type StkPushRequest,
   type StkPushResponse,
 } from "@app/types";
@@ -16,8 +19,9 @@ export const StkPushController: RequestHandler<
   any,
   StkPushResponse,
   StkPushRequest
-> = async (req, res) => {
+> = async (req: StampedRequest<StkPushRequest>, res) => {
   const validateRequest = service.validateStkRequest(req.body);
+  const timestamp = req.timestamp!;
 
   // Generate Redis Fingerprint and attempt to lock
   const lock = await service.tryLockTransaction(validateRequest);
@@ -35,15 +39,30 @@ export const StkPushController: RequestHandler<
     merchantRequestId,
     checkOutId,
   );
+  const request: ApiRequest = {
+    body: req.body,
+    headers: req.headers,
+    timestamp: timestamp,
+  };
+  const identifiers: ApiMetadataIdentifiers = {
+    checkoutRequestId: checkOutId,
+    merchantRequestId: merchantRequestId,
+  };
+  const apiPayLoad = service.buildApiPayload(request, identifiers);
+  const metadata = JSON.stringify(apiPayLoad);
 
   const child = logger.child({ checkoutId: checkOutId });
 
   // Record transaction to the DB
   try {
-    await service.insertTransaction({
-      ...validateRequest,
-      checkout_id: checkOutId,
-    });
+    await service.insertTransaction(
+      {
+        ...validateRequest,
+        checkout_id: checkOutId,
+        merchant_request_id: merchantRequestId,
+      },
+      metadata,
+    );
     child.info(
       { operation: "PaymentDBInsert" },
       "Transaction recorded successfully",
@@ -62,6 +81,7 @@ export const StkPushController: RequestHandler<
     await service.queuePaymentTask({
       ...validateRequest,
       checkout_id: checkOutId,
+      merchant_request_id: merchantRequestId,
     });
     child.info(
       { operation: "queuePaymentTask" },

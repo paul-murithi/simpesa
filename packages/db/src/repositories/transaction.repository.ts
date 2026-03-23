@@ -308,13 +308,17 @@ export class TransactionRepository {
     ]);
   }
 
-  async insertNewTransaction(transaction: CreateTransactionDTO) {
+  async insertNewTransaction(
+    transaction: CreateTransactionDTO,
+    metadata: string,
+  ) {
     const {
       checkout_id,
       external_reference,
       amount: transactionAmount,
       phone_number,
       short_code,
+      merchant_request_id,
     } = transaction;
     return await db.query(transactionQueries.ensureTransaction, [
       checkout_id,
@@ -322,6 +326,8 @@ export class TransactionRepository {
       short_code,
       phone_number,
       transactionAmount,
+      metadata,
+      merchant_request_id,
     ]);
   }
 }
