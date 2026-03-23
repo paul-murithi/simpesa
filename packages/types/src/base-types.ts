@@ -133,6 +133,21 @@ export type CreateTransactionDTO = CreateTransactionRequestDTO & {
   checkout_id: string;
 };
 
+/**STK Push */
+export type StkPushRequest = {
+  short_code: string;
+  phone_number: string;
+  amount: number;
+  external_reference: string;
+};
+
+export type StkPushResponse = {
+  MerchantRequestID: string;
+  CheckoutRequestID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
+};
+
 /**Webhook */
 export type WebHookPayLoad = {
   event: "TRANSACTION_SUCCESS" | "TRANSACTION_FAILED";
@@ -146,13 +161,13 @@ export type WebHookPayLoad = {
 /**Metadata */
 export type TransactionMetadata = {
   request: {
-    body: Record<string, any>;
+    body: StkPushRequest;
     headers?: Record<string, string>;
     timestamp: string;
   };
 
   response?: {
-    body: Record<string, any>;
+    body: StkPushResponse;
     statusCode?: number;
     timestamp: string;
   };

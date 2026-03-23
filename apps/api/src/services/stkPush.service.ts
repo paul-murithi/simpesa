@@ -7,6 +7,7 @@ import {
   TRANSACTION_STATUS,
   type CreateTransactionDTO,
   type CreateTransactionRequestDTO,
+  type StkPushResponse,
   type TransactionStatus,
 } from "@app/types";
 import { logger } from "@app/utils";
@@ -102,5 +103,17 @@ export class StkPushService {
     fromStatus: TransactionStatus,
   ) {
     return await this.repo.markTransactionFailed(checkout_id, fromStatus);
+  }
+
+  createStkPushResponse(
+    merchantRequestId: string,
+    checkoutRequestId: string,
+  ): StkPushResponse {
+    return {
+      MerchantRequestID: merchantRequestId,
+      CheckoutRequestID: checkoutRequestId,
+      ResponseCode: "0",
+      ResponseDescription: "Success. Request accepted for processing",
+    };
   }
 }

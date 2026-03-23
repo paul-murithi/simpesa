@@ -1,18 +1,26 @@
-import type { Request, Response } from "express";
+import type { Request, Response, RequestHandler } from "express";
 import { StkPushService } from "../services/stkPush.service.js";
 import { ConflictError } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
-import { TRANSACTION_STATUS } from "@app/types";
+import {
+  TRANSACTION_STATUS,
+  type StkPushRequest,
+  type StkPushResponse,
+} from "@app/types";
 
 const service = new StkPushService();
 const util = new TransactionUtils();
 
-export default async function StkPushController(req: Request, res: Response) {
-  const data = service.validateStkRequest(req.body);
+export const StkPushController: RequestHandler<
+  any,
+  StkPushResponse,
+  StkPushRequest
+> = async (req, res) => {
+  const validateRequest = service.validateStkRequest(req.body);
 
   // Generate Redis Fingerprint and attempt to lock
-  const lock = await service.tryLockTransaction(data);
+  const lock = await service.tryLockTransaction(validateRequest);
 
   if (!lock) {
     throw new ConflictError(
@@ -23,18 +31,19 @@ export default async function StkPushController(req: Request, res: Response) {
 
   const checkOutId = util.generateCheckoutId();
   const merchantRequestId = util.generateMerchantRequestId();
-  const acknowledgement = {
-    MerchantRequestID: merchantRequestId,
-    CheckoutRequestID: checkOutId,
-    ResponseCode: "0",
-    ResponseDescription: "Success. Request accepted for processing",
-  };
+  const acknowledgement = service.createStkPushResponse(
+    merchantRequestId,
+    checkOutId,
+  );
 
   const child = logger.child({ checkoutId: checkOutId });
 
-  // 1. Record transaction to the DB
+  // Record transaction to the DB
   try {
-    await service.insertTransaction({ ...data, checkout_id: checkOutId });
+    await service.insertTransaction({
+      ...validateRequest,
+      checkout_id: checkOutId,
+    });
     child.info(
       { operation: "PaymentDBInsert" },
       "Transaction recorded successfully",
@@ -48,9 +57,12 @@ export default async function StkPushController(req: Request, res: Response) {
     return res.status(200).json(acknowledgement);
   }
 
-  // 2. Enqueue transaction
+  // Enqueue transaction
   try {
-    await service.queuePaymentTask({ ...data, checkout_id: checkOutId });
+    await service.queuePaymentTask({
+      ...validateRequest,
+      checkout_id: checkOutId,
+    });
     child.info(
       { operation: "queuePaymentTask" },
       "Transaction queued successfully",
@@ -66,6 +78,5 @@ export default async function StkPushController(req: Request, res: Response) {
     return res.status(200).json(acknowledgement);
   }
 
-  // 3. Always 200
   return res.status(200).json(acknowledgement);
-}
+};
