@@ -29,7 +29,9 @@ SELECT "status" FROM transactions WHERE checkout_id = $1;
 
 -- name: markTransactionSuccess
 UPDATE transactions
-SET "status" = $1
+SET
+    "status" = $1,
+    result_code = $4
 WHERE
     checkout_id = $2
     AND "status" = $3;
@@ -49,7 +51,9 @@ FOR UPDATE;
 
 -- name: markTransactionFailed
 UPDATE transactions
-SET "status" = $1
+SET
+    "status" = $1,
+    result_code = $4
 WHERE
     checkout_id = $2
     AND "status" = $3;

@@ -14,6 +14,7 @@ import {
   InvalidStateError,
   logger,
   ConflictError,
+  RESULT_CODES,
 } from "@app/utils";
 import { TRANSACTION_STATUS } from "@app/types";
 
@@ -113,6 +114,7 @@ export class TransactionRepository {
       // Commit the transaction
       await client.query("COMMIT");
     } catch (error) {
+      const resultCode = this.getResultCode(error);
       try {
         // Rollback the transaction
         await client.query("ROLLBACK");
@@ -126,6 +128,7 @@ export class TransactionRepository {
         await this.markTransactionFailed(
           checkout_id,
           TRANSACTION_STATUS.PENDING,
+          resultCode,
         );
       throw error;
     } finally {
@@ -217,6 +220,7 @@ export class TransactionRepository {
         TRANSACTION_STATUS.SUCCESS,
         checkout_id,
         TRANSACTION_STATUS.PROCESSING,
+        RESULT_CODES.SUCCESS,
       ]);
 
       await client.query("COMMIT");
@@ -225,6 +229,7 @@ export class TransactionRepository {
         checkout_id,
       };
     } catch (error) {
+      const resultCode = this.getResultCode(error);
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -245,6 +250,7 @@ export class TransactionRepository {
           await this.markTransactionFailed(
             checkout_id,
             TRANSACTION_STATUS.PROCESSING,
+            resultCode,
           );
           child.info("Transaction state updated to FAILED");
         }
@@ -280,6 +286,7 @@ export class TransactionRepository {
   async markTransactionFailed(
     checkout_id: string,
     fromStatus: TransactionStatus,
+    resultCode: number,
   ): Promise<void> {
     const child = logger.child({ checkoutId: checkout_id });
     const { FAILED } = TRANSACTION_STATUS;
@@ -288,6 +295,7 @@ export class TransactionRepository {
         FAILED,
         checkout_id,
         fromStatus,
+        resultCode,
       ]);
       child.info("Transaction marked as FAILED");
     } catch (error) {
@@ -329,5 +337,17 @@ export class TransactionRepository {
       metadata,
       merchant_request_id,
     ]);
+  }
+
+  getResultCode(error: any) {
+    if (error instanceof NotFoundError) {
+      return RESULT_CODES.CREDIT_ACCOUNT_INVALID;
+    } else if (error instanceof InsufficientFundsError) {
+      return RESULT_CODES.INSUFFICIENT_FUNDS;
+    } else if (error instanceof ConflictError) {
+      return RESULT_CODES.SUBSCRIBER_LOCKED;
+    } else if (error instanceof InvalidStateError) {
+      return RESULT_CODES.INTERNAL_FAILURE;
+    } else return RESULT_CODES.GENERAL_ERROR;
   }
 }

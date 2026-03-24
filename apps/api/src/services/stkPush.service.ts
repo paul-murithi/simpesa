@@ -106,8 +106,13 @@ export class StkPushService {
   async markTransactionFailed(
     checkout_id: string,
     fromStatus: TransactionStatus,
+    resultCode: number,
   ) {
-    return await this.repo.markTransactionFailed(checkout_id, fromStatus);
+    return await this.repo.markTransactionFailed(
+      checkout_id,
+      fromStatus,
+      resultCode,
+    );
   }
 
   createStkPushResponse(

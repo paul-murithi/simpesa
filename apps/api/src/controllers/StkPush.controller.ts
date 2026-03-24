@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import { StkPushService } from "../services/stkPush.service.js";
-import { ConflictError } from "@app/utils";
+import { ConflictError, RESULT_CODES } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
 import {
@@ -92,8 +92,12 @@ export const StkPushController: RequestHandler<
       { err: error, operation: "queuePaymentTask" },
       "Enqueue failed — compensating",
     );
-
-    await service.markTransactionFailed(checkOutId, TRANSACTION_STATUS.PENDING);
+    const resultCode = RESULT_CODES.INTERNAL_FAILURE;
+    await service.markTransactionFailed(
+      checkOutId,
+      TRANSACTION_STATUS.PENDING,
+      resultCode,
+    );
     if (lock) await service.releaseLock(lock.key, lock.token);
     return res.status(200).json(acknowledgement);
   }
