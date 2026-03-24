@@ -29,7 +29,6 @@ export const transactionProcessor = async (
   try {
     await service.processTransaction(transactionalData);
   } catch (error) {
-    // 👇 business logic errors → NEVER retry
     if (
       error instanceof InsufficientFundsError ||
       error instanceof NotFoundError ||
@@ -39,7 +38,6 @@ export const transactionProcessor = async (
       throw new UnrecoverableError((error as Error).message);
     }
 
-    // 👇 unknown/transient → let BullMQ retry
     child.error({ error }, "Transient error — will retry");
     throw error;
   }

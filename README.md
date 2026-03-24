@@ -6,38 +6,42 @@
 
 > **A production-grade, containerized M-Pesa Daraja API simulator that runs entirely on localhost—because your development shouldn't depend on Safaricom's uptime.**
 
-##  The Problem
+## The Problem
 
 If you've ever integrated with M-Pesa's Daraja API, you know the pain:
 
 - **Error 1037 (DS Timeout)** halting your integration for days
-- **Error 1001 (Subscriber Locked)** disrupting your testing flow  
+- **Error 1001 (Subscriber Locked)** disrupting your testing flow
 - **Error 9999 (General Error)** appearing at the worst possible moments
 - Sandbox downtime derailing product launches
 
 Sim-Pesa eliminates these frustrations by providing a **hermetic, zero-latency environment** that runs entirely on your machine.
 
-##  Features
+## Features
 
-###  Local Appliance Architecture
+### Local Appliance Architecture
+
 - **100% Offline**: No internet required after initial Docker image pull
 - **Zero Configuration**: First-run wizard handles all setup
 - **State Persistence**: Your merchants, users, and transactions survive restarts
 - **Instant Response**: Sub-100ms API acknowledgments
 
-###  Production-Grade Integrity
+### Production-Grade Integrity
+
 - **ACID Compliance**: PostgreSQL with row-level locking prevents race conditions
 - **Transactional State Machine**: Rigorous PENDING → PROCESSING → SUCCESS/FAILED lifecycle
 - **Idempotent Operations**: Duplicate requests handled safely with `ON CONFLICT` logic
 - **Atomic Balance Updates**: No double-spending, no lost updates
 
-###  Developer Experience
+### Developer Experience
+
 - **Virtual Smartphone UI**: Manually approve/reject STK Push requests with PIN entry
 - **Auto-Approve Mode**: Stress-test your integration with automated approvals
 - **Real-time Dashboard**: Monitor all transactions as they flow through the system
 - **Structured Logging**: Every request correlated by `TransactionID` for deep debugging
 
-###  Full M-Pesa Simulation
+### Full M-Pesa Simulation
+
 - STK Push (Lipa na M-Pesa Online)
 - Transaction status queries
 - Webhook callbacks with exponential backoff retry
@@ -46,34 +50,38 @@ Sim-Pesa eliminates these frustrations by providing a **hermetic, zero-latency e
 ## 🏁 Quick Start
 
 ### Prerequisites
+
 - [Docker](https://docs.docker.com/get-docker/) (v20.10+)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/paul-murithi/simpesa.git
    cd simpesa
    ```
 
 2. **Start the appliance**
+
    ```bash
    docker compose up -d
    ```
 
 3. **Access the dashboard**
-   
+
    Open [http://localhost:3000](http://localhost:3000) in your browser
 
 4. **Complete first-run setup**
-   
+
    The onboarding wizard will guide you through:
    - Registering your first merchant (ShortCode)
    - Setting your callback URL
    - Creating a test user with 10,000 KES balance
 
 5. **Make your first STK Push**
+
    ```bash
    curl -X POST http://localhost:8080/stkpush/v1/processrequest \
      -H "Authorization: Bearer simulated-token" \
@@ -88,10 +96,10 @@ Sim-Pesa eliminates these frustrations by providing a **hermetic, zero-latency e
    ```
 
 6. **Approve the transaction**
-   
+
    Go to the Virtual Smartphone in the dashboard and enter PIN: `1234`
 
-##  Architecture
+## Architecture
 
 Sim-Pesa uses a multi-container architecture orchestrated by Docker Compose:
 
@@ -134,18 +142,20 @@ Sim-Pesa uses a multi-container architecture orchestrated by Docker Compose:
 
 ### Core Services
 
-| Service | Technology | Port | Purpose |
-|---------|-----------|------|---------|
-| **Ingestion API** | Node.js + Express | 8080 | Receives STK Push requests |
-| **Worker Pool** | Node.js + BullMQ | - | Processes payments asynchronously |
-| **Database** | PostgreSQL 16 | 5432 | Persistent storage |
-| **Cache/Queue** | Redis 7 | 6379 | Message broker |
-| **Dashboard** | React + Vite | 3000 | Visual interface |
+| Service           | Technology        | Port | Purpose                           |
+| ----------------- | ----------------- | ---- | --------------------------------- |
+| **Ingestion API** | Node.js + Express | 8080 | Receives STK Push requests        |
+| **Worker Pool**   | Node.js + BullMQ  | -    | Processes payments asynchronously |
+| **Database**      | PostgreSQL 16     | 5432 | Persistent storage                |
+| **Cache/Queue**   | Redis 7           | 6379 | Message broker                    |
+| **Dashboard**     | React + Vite      | 3000 | Visual interface                  |
 
 ## 🗄️ Database Schema
 
 ### Merchants Table
+
 Stores business entities (Paybills/Till numbers)
+
 ```sql
 - id (UUID, primary key)
 - short_code (VARCHAR, unique) -- e.g., "174379"
@@ -156,7 +166,9 @@ Stores business entities (Paybills/Till numbers)
 ```
 
 ### Users Table
+
 Simulated M-Pesa subscribers
+
 ```sql
 - phone_number (VARCHAR, primary key) -- e.g., "254712345678"
 - pin (VARCHAR) -- 4-digit PIN for approval
@@ -165,7 +177,9 @@ Simulated M-Pesa subscribers
 ```
 
 ### Transactions Table
+
 Immutable audit log
+
 ```sql
 - request_id (UUID, primary key)
 - checkout_id (VARCHAR, unique) -- Daraja CheckoutRequestID
@@ -177,43 +191,176 @@ Immutable audit log
 - metadata (JSONB) -- Full request/response for debugging
 ```
 
-##  Simulated Error Codes
+## Simulated Error Codes
 
 Test your error handling logic with realistic scenarios:
 
-| Code | Description | How to Trigger |
-|------|-------------|----------------|
-| `0` | Success | Normal flow with correct PIN |
-| `1` | Insufficient Funds | Set user balance < transaction amount |
-| `1032` | Cancelled by User | Click "Cancel" on Virtual Smartphone |
-| `2001` | Invalid PIN | Enter wrong PIN in Virtual Smartphone |
-| `1037` | DS Timeout | Enable "Simulate Timeout" in dashboard |
+| Code   | Description        | How to Trigger                         |
+| ------ | ------------------ | -------------------------------------- |
+| `0`    | Success            | Normal flow with correct PIN           |
+| `1`    | Insufficient Funds | Set user balance < transaction amount  |
+| `1032` | Cancelled by User  | Click "Cancel" on Virtual Smartphone   |
+| `2001` | Invalid PIN        | Enter wrong PIN in Virtual Smartphone  |
+| `1037` | DS Timeout         | Enable "Simulate Timeout" in dashboard |
 
-##  Development
+## Development
 
 ### Project Structure
+
 ```
-sim-pesa/
-├── api/                 # Ingestion API service
-│   ├── src/
-│   │   ├── routes/     # Express endpoints
-│   │   ├── services/   # Business logic
-│   │   └── types/      # TypeScript definitions
-│   └── Dockerfile
-├── worker/              # Asynchronous processor
-│   ├── src/
-│   │   ├── jobs/       # BullMQ job handlers
-│   │   ├── db/         # Database layer
-│   │   └── webhooks/   # Callback dispatcher
-│   └── Dockerfile
-├── dashboard/           # React frontend
-│   ├── src/
-│   │   ├── components/ # UI components
-│   │   └── pages/      # Routes
-│   └── Dockerfile
-├── db/                  # PostgreSQL migrations
-│   └── init/           # Schema initialization
-└── docker-compose.yml   # Orchestration config
+├── apps
+│   ├── api
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── controllers
+│   │   │   │   └── StkPush.controller.ts
+│   │   │   ├── index.ts
+│   │   │   ├── lib
+│   │   │   │   └── redisClient.ts
+│   │   │   ├── middleware
+│   │   │   │   ├── auth.ts
+│   │   │   │   ├── errorHandler.ts
+│   │   │   │   ├── timestamp.middleware.ts
+│   │   │   │   └── transaction.validation.ts
+│   │   │   ├── routes
+│   │   │   │   ├── stkpush.ts
+│   │   │   │   └── test.ts
+│   │   │   ├── server.ts
+│   │   │   ├── services
+│   │   │   │   └── stkPush.service.ts
+│   │   │   └── utils
+│   │   │       └── transaction.utils.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.tsbuildinfo
+│   ├── ui
+│   │   ├── Dockerfile
+│   │   ├── eslint.config.js
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── public
+│   │   │   └── vite.svg
+│   │   ├── src
+│   │   │   ├── App.css
+│   │   │   ├── App.tsx
+│   │   │   ├── assets
+│   │   │   │   └── react.svg
+│   │   │   ├── components
+│   │   │   ├── index.css
+│   │   │   └── main.tsx
+│   │   ├── tsconfig.app.json
+│   │   ├── tsconfig.json
+│   │   ├── tsconfig.node.json
+│   │   ├── vite.config.js
+│   │   └── vite.config.ts
+│   └── worker
+│       ├── Dockerfile
+│       ├── package.json
+│       ├── src
+│       │   ├── config
+│       │   │   └── redis.ts
+│       │   ├── index.ts
+│       │   ├── processors
+│       │   │   ├── transaction.processor.ts
+│       │   │   └── webhook.processor.ts
+│       │   ├── services
+│       │   │   ├── balance.service.ts
+│       │   │   ├── transaction.service.ts
+│       │   │   └── webhook.service.ts
+│       │   └── worker
+│       │       ├── transaction.worker.ts
+│       │       └── webhook.worker.ts
+│       ├── tsconfig.json
+│       └── tsconfig.tsbuildinfo
+├── docker-compose.dev.yml
+├── docker-compose.yml
+├── docs
+│   ├── api.md
+│   ├── architecture.md
+│   └── roadmap.md
+├── package.json
+├── package-lock.json
+├── packages
+│   ├── db
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── client.ts
+│   │   │   ├── index.ts
+│   │   │   ├── migration-runner.ts
+│   │   │   ├── migrations
+│   │   │   │   ├── 001_create_merchants.sql
+│   │   │   │   ├── 002_create_users.sql
+│   │   │   │   ├── 003_create_transactions.sql
+│   │   │   │   └── 004_create_transactions.sql
+│   │   │   ├── queries
+│   │   │   │   ├── balances.sql
+│   │   │   │   ├── merchants.sql
+│   │   │   │   ├── transactions.sql
+│   │   │   │   └── users.sql
+│   │   │   ├── query-loader.ts
+│   │   │   ├── repositories
+│   │   │   │   └── transaction.repository.ts
+│   │   │   ├── schema_migrations.sql
+│   │   │   └── types
+│   │   │       ├── merchant.queries.ts
+│   │   │       ├── transaction.queries.ts
+│   │   │       └── user.queries.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.tsbuildinfo
+│   ├── queue
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   └── index.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.tsbuildinfo
+│   ├── test
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── api
+│   │   │   │   ├── ingestion-api-flow.test.ts
+│   │   │   │   ├── ingestion-api-route.test.ts
+│   │   │   │   ├── ingestion-api-server.test.ts
+│   │   │   │   ├── ingestion-api-setup.test.ts
+│   │   │   │   └── ingestion-middleware.test.ts
+│   │   │   ├── db
+│   │   │   │   └── seed-helper.ts
+│   │   │   ├── factories
+│   │   │   │   ├── merchant.factory.ts
+│   │   │   │   ├── transaction.factory.ts
+│   │   │   │   └── user.factory.ts
+│   │   │   ├── index.ts
+│   │   │   ├── queue
+│   │   │   │   └── queue.test.ts
+│   │   │   ├── setup.ts
+│   │   │   ├── utils
+│   │   │   │   └── errors.test.ts
+│   │   │   └── worker
+│   │   │       └── transaction-worker-flow.test.ts
+│   │   └── tsconfig.json
+│   ├── types
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── base-types.ts
+│   │   │   └── index.ts
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.tsbuildinfo
+│   └── utils
+│       ├── package.json
+│       ├── src
+│       │   ├── errors.ts
+│       │   ├── index.ts
+│       │   ├── logger.ts
+│       │   └── payload-builder.ts
+│       ├── tsconfig.json
+│       └── tsconfig.tsbuildinfo
+├── README.md
+├── scripts
+│   ├── seed-dev-data.sql
+│   └── wait-for-db.sh
+├── tsconfig.base.json
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── vitest.config.ts
 ```
 
 ### Running in Development Mode
@@ -245,10 +392,12 @@ docker compose down -v
 docker compose up -d
 ```
 
-##  Monitoring & Debugging
+## Monitoring & Debugging
 
 ### Structured Logging
+
 Every log entry includes:
+
 - `transactionId`: Unique identifier for request correlation
 - `timestamp`: ISO 8601 formatted
 - `level`: info/warn/error
@@ -256,6 +405,7 @@ Every log entry includes:
 - `message`: Human-readable description
 
 Example log output:
+
 ```json
 {
   "transactionId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -280,25 +430,36 @@ API Request → Queue → Worker → Database → Webhook
        <100ms     saved    acquired    changes    (exponential backoff)
 ```
 
-##  Current Status
+## Current Status
 
-**Week 5 of 16** - Infrastructure & Foundation Phase
+**Week 11 of 16** - Asynchronous Queuing and Webhooks Phase
 
-✅ Completed:
+Completed:
+
 - Docker Compose orchestration
 - PostgreSQL schema with migrations
 - Basic API ingestion endpoint
 - Structured logging with Pino
-
-🔄 In Progress:
 - TransactionID correlation across services
-- First-run wizard UI design
+- State machine implementation
+- Row-level locking for concurrency
+- Atomic idempotency with PostgreSQL ON CONFLICT
+- Integration testing (80%+ code coverage)
+- Redis and BullMQ integration
+- Worker-based async job processing
 
-📅 Upcoming:
-- State machine implementation (Week 5)
-- Row-level locking for concurrency (Week 6)
-- BullMQ integration (Week 9)
-- Virtual Smartphone UI (Week 14)
+In Progress:
+
+- Webhook dispatcher with callback delivery
+- Exponential backoff retry strategy for failed deliveries
+
+Upcoming:
+
+- Security mocking (token validation) - Week 12
+- React Dashboard and transaction monitoring - Week 13
+- Virtual Smartphone PIN entry UI - Week 14
+- Onboarding wizard and first-run flow - Week 15
+- Final polish and documentation - Week 16
 
 See the [full 16-week roadmap](ROADMAP.md) for detailed milestones.
 
@@ -307,6 +468,7 @@ See the [full 16-week roadmap](ROADMAP.md) for detailed milestones.
 This is a side-project built by a university student learning production-grade system design. Contributions, bug reports, and feature requests are welcome!
 
 ### Development Principles
+
 1. **Integrity First**: Every balance update must be atomic
 2. **Appliance Philosophy**: Zero manual configuration required
 3. **Pragmatic Visibility**: Structured logs over complex tracing
@@ -334,4 +496,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Powered by Paulos Network Meru, Kenya**
 
-*Making M-Pesa integration testing deterministic, one transaction at a time.*
+_Making M-Pesa integration testing deterministic, one transaction at a time._
