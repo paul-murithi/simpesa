@@ -7,6 +7,7 @@ import {
 } from "@app/utils";
 import type { CreateTransactionDTO } from "@app/types";
 import { TransactionService } from "../services/transaction.service.js";
+import { addWebhookJob } from "@app/queue";
 
 const service = new TransactionService();
 
@@ -14,7 +15,7 @@ export const transactionProcessor = async (
   job: Job<CreateTransactionDTO, void>,
 ) => {
   const transactionalData = job.data;
-  const checkout_id = job.id as string;
+  const checkout_id = transactionalData.checkout_id;
 
   if (!checkout_id) {
     logger.error("Missing checkout_id — cannot process transaction");
@@ -27,7 +28,20 @@ export const transactionProcessor = async (
   child.info("Processing transaction job");
 
   try {
-    await service.processTransaction(transactionalData);
+    const result = await service.processTransaction(transactionalData);
+    if (result.success) {
+      await addWebhookJob({
+        checkoutId: checkout_id,
+        event: "transaction.completed",
+      });
+    } else {
+      await addWebhookJob({
+        checkoutId: checkout_id,
+        event: "transaction.failed",
+      });
+    }
+
+    child.info("Transaction processed successfully");
   } catch (error) {
     if (
       error instanceof InsufficientFundsError ||
@@ -41,6 +55,4 @@ export const transactionProcessor = async (
     child.error({ error }, "Transient error — will retry");
     throw error;
   }
-
-  child.info("Transaction processed successfully");
 };

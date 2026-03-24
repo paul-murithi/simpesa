@@ -6,6 +6,7 @@ import type { Request } from "express";
 export interface StampedRequest<Body = any> extends Request<any, any, Body> {
   timestamp?: string;
 }
+export type QueryFn = (text: string, params?: any[]) => Promise<any>;
 
 export type UUID = string;
 export type ISODateString = string;
@@ -160,6 +161,11 @@ export type WebHookPayLoad = {
   external_reference: string;
   status: "SUCCESS" | "FAILED";
   timestamp: string;
+};
+
+export type WebhookJob = {
+  checkoutId: string;
+  event: "transaction.completed" | "transaction.failed";
 };
 
 /**Metadata */

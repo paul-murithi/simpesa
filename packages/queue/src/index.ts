@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
-import type { CreateTransactionDTO } from "@app/types";
+import type { CreateTransactionDTO, WebhookJob } from "@app/types";
+import { logger } from "@app/utils";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -8,6 +9,7 @@ const connection = {
 };
 
 export const paymentQueue = new Queue("payment-tasks", { connection });
+export const webhookQueue = new Queue("webhook-tasks", { connection });
 
 export const addPaymentJob = async (transaction: CreateTransactionDTO) => {
   return await paymentQueue.add("stk-push-request", transaction, {
@@ -23,6 +25,21 @@ export const addPaymentJob = async (transaction: CreateTransactionDTO) => {
       type: "exponential",
       //exponential backoff delay
       delay: 1000,
+    },
+  });
+};
+
+export const addWebhookJob = async (job: WebhookJob) => {
+  return await webhookQueue.add("send-webhook", job, {
+    jobId: `${job.checkoutId}-${job.event}`,
+
+    removeOnComplete: { age: 3600, count: 1000 },
+    removeOnFail: { age: 86400 },
+
+    attempts: 5,
+    backoff: {
+      type: "exponential",
+      delay: 2000,
     },
   });
 };
