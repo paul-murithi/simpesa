@@ -72,3 +72,7 @@ function buildErrorPayload(
 function isTerminalFailure(status: TransactionStatus): boolean {
   return TERMINAL_FAILURE_STATUSES.includes(status as any);
 }
+
+export function getCallbackUrl(transaction: TransactionResult) {
+  return transaction.callback_url;
+}

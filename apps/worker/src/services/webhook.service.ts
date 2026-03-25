@@ -1,17 +1,35 @@
 import type { WebhookJob } from "@app/types";
-import { logger, payloadBuilder } from "@app/utils";
-import { Query, TransactionRepository } from "@app/db";
+import { logger, payloadBuilder, getCallbackUrl } from "@app/utils";
+import { TransactionRepository } from "@app/db";
+import axios from "axios";
 
 const repo = new TransactionRepository();
 
 export class WebhookService {
   async dispatchWebhook(data: WebhookJob) {
+    // fetch transaction
     const txResult = (await this.getTransaction(data)).rows[0];
     logger.info({ txResult }, "[Webhook Service] Transaction result");
 
-    const payload = payloadBuilder(txResult);
+    // Build payload
+    const payload = await payloadBuilder(txResult);
+    const WEBHOOK_URL = getCallbackUrl(txResult);
 
-    // TODO: Proceed to send WebHook
+    // call-back send to mock server
+    try {
+      const response = await axios.post(WEBHOOK_URL, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      logger.info(
+        { status: response.status, data: response.data },
+        "[Webhook Service] Callback sent successfully",
+      );
+    } catch (err) {
+      logger.error({ err }, "[Webhook Service] Failed to send callback");
+    }
   }
 
   async getTransaction(data: WebhookJob) {

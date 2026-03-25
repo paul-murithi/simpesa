@@ -4,6 +4,7 @@ import testRouter from "./routes/test.js";
 import cors from "cors";
 import stkRoute from "./routes/stkpush.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { logger } from "@app/utils";
 
 const app = express();
 
@@ -26,7 +27,19 @@ app.use(express.json());
 app.use("/api", testRouter);
 app.use("/stkpush", stkRoute);
 
-// Error handling middleware
+app.post("/callback", (req, res) => {
+  const payload = req.body;
+
+  if (payload?.Body?.stkCallback?.CallbackMetadata) {
+    console.log("[Mock Callback] SUCCESS payload received:");
+    console.log(JSON.stringify(payload, null, 2));
+  } else {
+    console.log("[Mock Callback] ERROR payload received:");
+    console.log(JSON.stringify(payload, null, 2));
+  }
+  res.status(200).send({ status: "ok" });
+});
+
 app.use(errorHandler);
 
 export default app;

@@ -34,11 +34,13 @@ export const transactionProcessor = async (
         checkoutId: checkout_id,
         event: "transaction.completed",
       });
+      child.info("[Queue] Webhook Job queued");
     } else {
       await addWebhookJob({
         checkoutId: checkout_id,
         event: "transaction.failed",
       });
+      child.info("[Queue] Webhook Job queued");
     }
 
     child.info("Transaction processed successfully");
