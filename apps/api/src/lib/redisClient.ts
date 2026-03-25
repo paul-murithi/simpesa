@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+import { logger } from "@app/utils";
 
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
@@ -10,18 +11,20 @@ export const redisClient = createClient({
   },
 });
 
-redisClient.on("error", (err: Error) => console.error("[Redis] Client Error:", err));
+redisClient.on("error", (err: Error) =>
+  console.error("[Redis] Client Error:", err),
+);
 
 export const connectRedis = async () => {
   if (!redisClient.isOpen) {
     await redisClient.connect();
-    console.log(`[Redis] Connected to ${REDIS_HOST}:${REDIS_PORT}`);
+    logger.info(`[Redis] Connected to ${REDIS_HOST}:${REDIS_PORT}`);
   }
 };
 
 export const closeRedis = async () => {
   if (redisClient.isOpen) {
-    console.log("[Redis] Closing connection...");
+    logger.info("[Redis] Closing connection...");
     await redisClient.quit();
   }
 };

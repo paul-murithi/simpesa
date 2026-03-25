@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { BaseError } from "@app/utils";
 
 export function errorHandler(
@@ -20,3 +20,8 @@ export function errorHandler(
     message: "Internal Server Error",
   });
 }
+
+export const asyncHandler =
+  (fn: RequestHandler): RequestHandler =>
+  (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
