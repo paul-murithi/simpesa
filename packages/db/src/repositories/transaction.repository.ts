@@ -17,6 +17,7 @@ import {
   RESULT_CODES,
 } from "@app/utils";
 import { TRANSACTION_STATUS } from "@app/types";
+import { Query } from "../client.js";
 
 export class TransactionRepository {
   /**
@@ -349,5 +350,12 @@ export class TransactionRepository {
     } else if (error instanceof InvalidStateError) {
       return RESULT_CODES.INTERNAL_FAILURE;
     } else return RESULT_CODES.GENERAL_ERROR;
+  }
+
+  async getTransactionByCheckoutId(checkout_id: string) {
+    return await Query(
+      transactionQueries.GetTransactionWithCallbackByCheckoutID,
+      [checkout_id],
+    );
   }
 }

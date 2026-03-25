@@ -1,7 +1,7 @@
 import { TransactionRepository, Query, pool } from "@app/db";
 import type { CreateTransactionDTO } from "@app/types";
 import { UserStatus } from "@app/types";
-import { ConflictError, NotFoundError, payloadBuilder } from "@app/utils";
+import { ConflictError, NotFoundError } from "@app/utils";
 
 const repo = new TransactionRepository();
 export class TransactionService {

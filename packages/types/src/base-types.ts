@@ -32,6 +32,12 @@ export const TRANSACTION_STATUS = {
 export type TransactionStatus =
   (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
 
+export const TERMINAL_FAILURE_STATUSES = [
+  TRANSACTION_STATUS.FAILED,
+  TRANSACTION_STATUS.CANCELLED,
+  TRANSACTION_STATUS.VOIDED,
+] as const;
+
 export const UserStatus = {
   ACTIVE: "ACTIVE",
   INACTIVE: "INACTIVE",
@@ -154,18 +160,68 @@ export type StkPushResponse = {
 };
 
 /**Webhook */
-export type WebHookPayLoad = {
-  event: "TRANSACTION_SUCCESS" | "TRANSACTION_FAILED";
-  checkout_id: string;
-  amount: number;
-  external_reference: string;
-  status: "SUCCESS" | "FAILED";
-  timestamp: string;
+export type BaseCallback = {
+  Body: {
+    stkCallback: {
+      MerchantRequestID: string;
+      CheckoutRequestID: string;
+      ResultCode: number;
+      ResultDesc: string;
+    };
+  };
 };
+
+export type SuccessCallbackPayload = BaseCallback & {
+  Body: {
+    stkCallback: {
+      MerchantRequestID: string;
+      CheckoutRequestID: string;
+      ResultCode: number;
+      ResultDesc: string;
+      CallbackMetadata: {
+        Item: {
+          Name: string;
+          Value: string | number;
+        }[];
+      };
+    };
+  };
+};
+
+export type ErrorCallbackPayload = BaseCallback & {
+  Body: {
+    stkCallback: {
+      MerchantRequestID: string;
+      CheckoutRequestID: string;
+      ResultCode: number; // non-zero
+      ResultDesc: string;
+    };
+  };
+};
+
+export type CallbackPayload = SuccessCallbackPayload | ErrorCallbackPayload;
 
 export type WebhookJob = {
   checkoutId: string;
   event: "transaction.completed" | "transaction.failed";
+};
+
+export const WebhookEvent = {
+  TRANSACTION_COMPLETED: "transaction.completed",
+  TRANSACTION_FAILED: "transaction.failed",
+} as const;
+
+export type WebhookEvent = (typeof WebhookEvent)[keyof typeof WebhookEvent];
+
+export type TransactionResult = {
+  checkout_id: string;
+  external_reference: string;
+  merchant_request_id: string;
+  phone_number: string;
+  amount: string;
+  status: TransactionStatus;
+  result_code: number;
+  callback_url: string;
 };
 
 /**Metadata */

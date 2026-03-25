@@ -27,6 +27,25 @@ RETURNING *;
 -- name: getTransactionStatusByCheckoutId
 SELECT "status" FROM transactions WHERE checkout_id = $1;
 
+-- name: GetTransactionWithCallbackByCheckoutID
+SELECT
+    t.checkout_id,
+    t.external_reference,
+    t.merchant_request_id,
+    t.phone_number,
+    t.amount,
+    t.status,
+    t.result_code,
+    m.callback_url
+FROM
+    transactions t
+JOIN
+    merchants m
+ON
+    t.short_code = m.short_code
+WHERE
+    t.checkout_id = $1;
+
 -- name: markTransactionSuccess
 UPDATE transactions
 SET

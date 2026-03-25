@@ -8,6 +8,7 @@ interface transactionQueries {
   [key: string]: string;
   insertNewTransaction: string;
   GetTransactionById: string;
+  GetTransactionWithCallbackByCheckoutID: string;
   UpdateTransactionStatus: string;
   ensureTransaction: string;
   markTransactionSuccess: string;
