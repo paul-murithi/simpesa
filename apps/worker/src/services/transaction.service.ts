@@ -20,13 +20,7 @@ export class TransactionService {
     // TODO: STK Push logic
 
     // Phase 2: Complete the transaction
-    const { checkout_id, success } =
-      await repo.finalizeTransaction(transactionalData);
-
-    return {
-      checkout_id,
-      success,
-    };
+    await repo.finalizeTransaction(transactionalData);
   }
 
   async userAndMerchantExist(short_code: string, phone_number: string) {

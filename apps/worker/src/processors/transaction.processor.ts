@@ -3,13 +3,23 @@ import {
   InsufficientFundsError,
   InvalidStateError,
   NotFoundError,
+  getCallbackUrl,
   logger,
+  payloadBuilder,
 } from "@app/utils";
-import type { CreateTransactionDTO } from "@app/types";
+import type {
+  CallbackPayload,
+  CreateTransactionDTO,
+  WebhookJob,
+  WebHookJobEvent,
+} from "@app/types";
 import { TransactionService } from "../services/transaction.service.js";
 import { addWebhookJob } from "@app/queue";
+import { webhookQueries, Query } from "@app/db";
+import { WebhookService } from "../services/webhook.service.js";
 
 const service = new TransactionService();
+const webHookService = new WebhookService();
 
 export const transactionProcessor = async (
   job: Job<CreateTransactionDTO, void>,
@@ -28,14 +38,24 @@ export const transactionProcessor = async (
   child.info("Processing transaction job");
 
   try {
-    const result = await service.processTransaction(transactionalData);
-    if (result.success) {
-      await addWebhookJob({
-        checkoutId: checkout_id,
-        event: "transaction.completed",
-      });
-      child.info("[Queue] Webhook Job queued");
-    }
+    await service.processTransaction(transactionalData);
+    const result: WebHookJobEvent = {
+      checkoutId: checkout_id,
+      event: "transaction.completed",
+    };
+
+    const { callback_url, payload } = await getBuiltPayload(result);
+
+    // Insert webhook dispatch
+    const dispatchId = await createWebhookDispatch(
+      result,
+      payload,
+      callback_url,
+    );
+
+    // Enqueue
+    await addWebhookJob({ dispatchId: dispatchId, event: result.event });
+    child.info("[Queue] Webhook Job queued");
 
     child.info("Transaction processed successfully");
   } catch (error) {
@@ -45,11 +65,21 @@ export const transactionProcessor = async (
       error instanceof InvalidStateError
     ) {
       child.error({ error }, "Business error — no retry");
-
-      await addWebhookJob({
+      const result: WebHookJobEvent = {
         checkoutId: checkout_id,
         event: "transaction.failed",
-      });
+      };
+      const { callback_url, payload } = await getBuiltPayload(result);
+
+      /// Insert webhook dispatch
+      const dispatchId = await createWebhookDispatch(
+        result,
+        payload,
+        callback_url,
+      );
+
+      // Enqueue
+      await addWebhookJob({ dispatchId: dispatchId, event: result.event });
       return;
     }
 
@@ -57,3 +87,28 @@ export const transactionProcessor = async (
     throw error;
   }
 };
+
+async function getBuiltPayload(data: WebHookJobEvent) {
+  const txResult = (await webHookService.getTransaction(data)).rows[0];
+  const payload = await payloadBuilder(txResult);
+  const callback_url = getCallbackUrl(txResult);
+  return { payload, callback_url };
+}
+
+async function createWebhookDispatch(
+  data: WebHookJobEvent,
+  payload: CallbackPayload,
+  callback_url: string,
+) {
+  const { checkoutId, event } = data;
+
+  const dispatch_id = (
+    await Query(webhookQueries.createWebhookDispatch, [
+      checkoutId,
+      callback_url,
+      payload,
+    ])
+  ).rows[0].id;
+
+  return dispatch_id;
+}

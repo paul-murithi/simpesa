@@ -4,3 +4,4 @@ export * from "./repositories/transaction.repository.js";
 export * from "./types/merchant.queries.js";
 export * from "./types/transaction.queries.js";
 export * from "./types/user.queries.js";
+export * from "./types/webhooks.queries.js";

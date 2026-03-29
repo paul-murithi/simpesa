@@ -1,4 +1,4 @@
-import type { WebhookJob } from "@app/types";
+import type { WebhookJob, WebHookJobEvent } from "@app/types";
 import { logger, payloadBuilder, getCallbackUrl } from "@app/utils";
 import { TransactionRepository } from "@app/db";
 import axios from "axios";
@@ -6,10 +6,9 @@ import axios from "axios";
 const repo = new TransactionRepository();
 
 export class WebhookService {
-  async dispatchWebhook(data: WebhookJob) {
+  async dispatchWebhook(data: WebHookJobEvent) {
     // fetch transaction
     const txResult = (await this.getTransaction(data)).rows[0];
-    logger.info({ txResult }, "[Webhook Service] Transaction result");
 
     // Build payload
     const payload = await payloadBuilder(txResult);
@@ -32,7 +31,7 @@ export class WebhookService {
     }
   }
 
-  async getTransaction(data: WebhookJob) {
+  async getTransaction(data: WebHookJobEvent) {
     const { checkoutId } = data;
     return await repo.getTransactionByCheckoutId(checkoutId);
   }

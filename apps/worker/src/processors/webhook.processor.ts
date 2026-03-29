@@ -9,5 +9,5 @@ export const webhookProcessor = async (job: Job<WebhookJob>) => {
   const data = job.data;
   logger.info(`[Webhook processor] Received WebHook Job: ${data}`);
 
-  service.dispatchWebhook(data);
+  // service.dispatchWebhook(data);
 };

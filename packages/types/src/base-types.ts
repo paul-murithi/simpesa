@@ -202,6 +202,11 @@ export type ErrorCallbackPayload = BaseCallback & {
 export type CallbackPayload = SuccessCallbackPayload | ErrorCallbackPayload;
 
 export type WebhookJob = {
+  dispatchId: string;
+  event: "transaction.completed" | "transaction.failed";
+};
+
+export type WebHookJobEvent = {
   checkoutId: string;
   event: "transaction.completed" | "transaction.failed";
 };

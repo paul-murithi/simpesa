@@ -31,7 +31,7 @@ export const addPaymentJob = async (transaction: CreateTransactionDTO) => {
 
 export const addWebhookJob = async (job: WebhookJob) => {
   return await webhookQueue.add("send-webhook", job, {
-    jobId: `${job.checkoutId}-${job.event}`,
+    jobId: `${job.dispatchId}-${job.event}`,
 
     removeOnComplete: { age: 3600, count: 1000 },
     removeOnFail: { age: 86400 },
