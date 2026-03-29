@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import { StkPushService } from "../services/stkPush.service.js";
-import { ConflictError, RESULT_CODES } from "@app/utils";
+import { ConflictError, ExternalServiceError, RESULT_CODES } from "@app/utils";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { logger } from "@app/utils";
 import {
@@ -63,6 +63,7 @@ export const StkPushController: RequestHandler<
       },
       metadata,
     );
+
     child.info(
       { operation: "PaymentDBInsert" },
       "Transaction recorded successfully",
@@ -73,7 +74,7 @@ export const StkPushController: RequestHandler<
       "Abort: DB insert failed",
     );
     if (lock) await service.releaseLock(lock.key, lock.token);
-    return res.status(200).json(acknowledgement);
+    throw error;
   }
 
   // Enqueue transaction
@@ -92,14 +93,12 @@ export const StkPushController: RequestHandler<
       { err: error, operation: "queuePaymentTask" },
       "Enqueue failed — compensating",
     );
-    const resultCode = RESULT_CODES.INTERNAL_FAILURE;
-    await service.markTransactionFailed(
-      checkOutId,
-      TRANSACTION_STATUS.PENDING,
-      resultCode,
-    );
+
     if (lock) await service.releaseLock(lock.key, lock.token);
-    return res.status(200).json(acknowledgement);
+    throw new ExternalServiceError(
+      "Redis Queue Failure",
+      "The service was unable to process your request due to a downstream connection issue.",
+    );
   }
 
   return res.status(200).json(acknowledgement);

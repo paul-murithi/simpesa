@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { BaseError } from "@app/utils";
+import { BaseError, NotFoundError } from "@app/utils";
 
 export function errorHandler(
   err: unknown,
@@ -7,6 +7,9 @@ export function errorHandler(
   res: Response,
   next: NextFunction,
 ) {
+  if (err instanceof NotFoundError) {
+    return res.status(404).json({ message: err.message });
+  }
   if (err instanceof BaseError) {
     return res.status(err.statusCode).json({
       message: err.message,

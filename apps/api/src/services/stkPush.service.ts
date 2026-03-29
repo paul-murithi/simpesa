@@ -3,7 +3,11 @@ import { TransactionUtils } from "../utils/transaction.utils.js";
 import { redisClient } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
 import { addPaymentJob } from "@app/queue";
-import { ExternalServiceError, ValidationError } from "@app/utils";
+import {
+  ExternalServiceError,
+  NotFoundError,
+  ValidationError,
+} from "@app/utils";
 import {
   TRANSACTION_STATUS,
   type ApiMetadataIdentifiers,
@@ -36,7 +40,14 @@ export class StkPushService {
   }
 
   async insertTransaction(transaction: CreateTransactionDTO, metadata: string) {
-    await this.repo.insertNewTransaction(transaction, metadata);
+    try {
+      await this.repo.insertNewTransaction(transaction, metadata);
+    } catch (error: any) {
+      if (error.code === "23503") {
+        throw new NotFoundError("Merchant does not exist");
+      }
+      throw error;
+    }
   }
 
   /**
