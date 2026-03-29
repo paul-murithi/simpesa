@@ -8,7 +8,14 @@ export const createTransactionSchema = z.object({
       /^(254)(7|1)\d{8}$/,
       "Invalid Kenyan phone number (e.g 254712345678)",
     ),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce
+    .number()
+    .positive("Amount must be greater than 0")
+    .max(99_999_999.99, "Amount exceeds maximum allowed")
+    .refine(
+      (val) => Number.isInteger(val * 100),
+      "Amount must have at most 2 decimal places",
+    ),
   external_reference: z.string().min(1, "Reference is required").max(50),
   callback_url: z
     .url("A valid CallbackURL is required for STK Push")
