@@ -35,12 +35,6 @@ export const transactionProcessor = async (
         event: "transaction.completed",
       });
       child.info("[Queue] Webhook Job queued");
-    } else {
-      await addWebhookJob({
-        checkoutId: checkout_id,
-        event: "transaction.failed",
-      });
-      child.info("[Queue] Webhook Job queued");
     }
 
     child.info("Transaction processed successfully");
@@ -51,7 +45,12 @@ export const transactionProcessor = async (
       error instanceof InvalidStateError
     ) {
       child.error({ error }, "Business error — no retry");
-      throw new UnrecoverableError((error as Error).message);
+
+      await addWebhookJob({
+        checkoutId: checkout_id,
+        event: "transaction.failed",
+      });
+      return;
     }
 
     child.error({ error }, "Transient error — will retry");
