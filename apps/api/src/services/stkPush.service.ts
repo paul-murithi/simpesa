@@ -15,6 +15,7 @@ import {
   type ApiTransactionMetadata,
   type CreateTransactionDTO,
   type CreateTransactionRequestDTO,
+  type PaymentJobPayload,
   type StkPushRequest,
   type StkPushResponse,
   type TransactionStatus,
@@ -41,7 +42,11 @@ export class StkPushService {
 
   async insertTransaction(transaction: CreateTransactionDTO, metadata: string) {
     try {
-      await this.repo.insertNewTransaction(transaction, metadata);
+      const request_id = await this.repo.insertNewTransaction(
+        transaction,
+        metadata,
+      );
+      return request_id;
     } catch (error: any) {
       if (error.code === "23503") {
         throw new NotFoundError("Merchant does not exist");
@@ -96,7 +101,7 @@ export class StkPushService {
    *Adds a new job to the queue for processing STK Push payment
    * @param data - Transaction request received from the user
    */
-  async queuePaymentTask(transaction: CreateTransactionDTO) {
+  async queuePaymentTask(transaction: PaymentJobPayload) {
     const childLogger = logger.child({ checkoutId: transaction.checkout_id });
     try {
       await addPaymentJob(transaction);

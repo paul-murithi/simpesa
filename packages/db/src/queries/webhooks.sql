@@ -1,13 +1,13 @@
 -- name: createWebhookDispatch
 INSERT INTO webhook_dispatches (
-    -- transaction_id,
+    transaction_id,
     checkout_id,
     callback_url,
     payload,
     status,
     next_retry_at
 )
-VALUES ($1, $2, $3, 'pending', NOW())
+VALUES ($1, $2, $3, $4, 'pending', NOW())
 RETURNING id;
 
 -- name: getWebhook

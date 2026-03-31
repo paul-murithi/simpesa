@@ -113,7 +113,6 @@ export interface CreateUserDTO {
 /* 
    Transactions Table
  */
-
 export interface Transaction {
   request_id: UUID;
   checkout_id: UUID;
@@ -133,6 +132,12 @@ export type TransactionBase = {
   phone_number: string;
   amount: number;
   external_reference: string;
+};
+
+export type PaymentJobPayload = TransactionBase & {
+  transaction_id: string;
+  checkout_id: string;
+  merchant_request_id: string;
 };
 
 export interface UpdateTransactionStatusDTO {

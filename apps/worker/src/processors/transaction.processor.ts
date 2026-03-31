@@ -10,6 +10,7 @@ import {
 import type {
   CallbackPayload,
   CreateTransactionDTO,
+  PaymentJobPayload,
   WebhookJob,
   WebHookJobEvent,
 } from "@app/types";
@@ -22,15 +23,23 @@ const service = new TransactionService();
 const webHookService = new WebhookService();
 
 export const transactionProcessor = async (
-  job: Job<CreateTransactionDTO, void>,
+  job: Job<PaymentJobPayload, void>,
 ) => {
+  // const transactionalData = job.data;
+  // const checkout_id = transactionalData.checkout_id;
+  const { checkout_id, transaction_id } = job.data;
   const transactionalData = job.data;
-  const checkout_id = transactionalData.checkout_id;
 
   if (!checkout_id) {
     logger.error("Missing checkout_id — cannot process transaction");
     throw new UnrecoverableError(
       "[Processor] Missing checkout_id — cannot process transaction",
+    );
+  }
+  if (!transaction_id) {
+    logger.error("Missing transaction_id — cannot process transaction");
+    throw new UnrecoverableError(
+      "[Processor] Missing transaction_id — cannot process transaction",
     );
   }
 
@@ -51,6 +60,7 @@ export const transactionProcessor = async (
       result,
       payload,
       callback_url,
+      transaction_id,
     );
 
     // Enqueue
@@ -76,6 +86,7 @@ export const transactionProcessor = async (
         result,
         payload,
         callback_url,
+        transaction_id,
       );
 
       // Enqueue
@@ -105,6 +116,7 @@ async function createWebhookDispatch(
   data: WebHookJobEvent,
   payload: CallbackPayload,
   callback_url: string,
+  transaction_id: string,
 ) {
   const { checkoutId, event } = data;
   const child = logger.child({ checkoutId });
@@ -112,11 +124,12 @@ async function createWebhookDispatch(
   child.info("[DB] Creating Webhook Dispatch");
   const dispatch_id = (
     await Query(webhookQueries.createWebhookDispatch, [
+      transaction_id,
       checkoutId,
       callback_url,
       payload,
     ])
   ).rows[0].id;
-
+  child.info("[DB] Created Webhook Dispatch");
   return dispatch_id;
 }

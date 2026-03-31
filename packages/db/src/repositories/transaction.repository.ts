@@ -110,7 +110,9 @@ export class TransactionRepository {
         checkout_id,
         PENDING,
       ]);
-      child.info("Status updated to processing");
+      child.info(
+        "Completed Phase-1 Transaction processing, Status updated to processing",
+      );
 
       // Commit the transaction
       await client.query("COMMIT");
@@ -223,6 +225,9 @@ export class TransactionRepository {
         TRANSACTION_STATUS.PROCESSING,
         RESULT_CODES.SUCCESS,
       ]);
+      child.info(
+        "Completed Phase-2 Database Transaction, Status updated to terminal state SUCCESS",
+      );
 
       await client.query("COMMIT");
       return {
@@ -329,15 +334,19 @@ export class TransactionRepository {
       short_code,
       merchant_request_id,
     } = transaction;
-    return await db.query(transactionQueries.ensureTransaction, [
-      checkout_id,
-      external_reference,
-      short_code,
-      phone_number,
-      transactionAmount,
-      metadata,
-      merchant_request_id,
-    ]);
+
+    const request_id = (
+      await db.query(transactionQueries.ensureTransaction, [
+        checkout_id,
+        external_reference,
+        short_code,
+        phone_number,
+        transactionAmount,
+        metadata,
+        merchant_request_id,
+      ])
+    ).rows[0].request_id;
+    return request_id;
   }
 
   getResultCode(error: any) {

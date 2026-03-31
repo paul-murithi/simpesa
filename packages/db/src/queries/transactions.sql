@@ -22,7 +22,7 @@ VALUES (
     NOW() + INTERVAL '15 minutes'
 )
 ON CONFLICT (checkout_id) DO NOTHING
-RETURNING *;
+RETURNING request_id;
 
 -- name: getTransactionStatusByCheckoutId
 SELECT "status" FROM transactions WHERE checkout_id = $1;

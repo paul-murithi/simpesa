@@ -1,5 +1,9 @@
 import { Queue } from "bullmq";
-import type { CreateTransactionDTO, WebhookJob } from "@app/types";
+import type {
+  CreateTransactionDTO,
+  PaymentJobPayload,
+  WebhookJob,
+} from "@app/types";
 import { logger } from "@app/utils";
 import { log } from "console";
 
@@ -12,7 +16,7 @@ const connection = {
 export const paymentQueue = new Queue("payment-tasks", { connection });
 export const webhookQueue = new Queue("webhook-tasks", { connection });
 
-export const addPaymentJob = async (transaction: CreateTransactionDTO) => {
+export const addPaymentJob = async (transaction: PaymentJobPayload) => {
   return await paymentQueue.add("stk-push-request", transaction, {
     ...(transaction.checkout_id && { jobId: transaction.checkout_id }),
 

@@ -7,6 +7,7 @@ import {
   TRANSACTION_STATUS,
   type ApiMetadataIdentifiers,
   type ApiRequest,
+  type PaymentJobPayload,
   type StampedRequest,
   type StkPushRequest,
   type StkPushResponse,
@@ -54,8 +55,9 @@ export const StkPushController: RequestHandler<
   const child = logger.child({ checkoutId: checkOutId });
 
   // Record transaction to the DB
+  let request_id = null;
   try {
-    await service.insertTransaction(
+    request_id = await service.insertTransaction(
       {
         ...validateRequest,
         checkout_id: checkOutId,
@@ -78,12 +80,19 @@ export const StkPushController: RequestHandler<
   }
 
   // Enqueue transaction
+  if (!request_id) {
+    throw new ExternalServiceError(
+      "An error occurred. Missing Transaction Request ID",
+    );
+  }
   try {
-    await service.queuePaymentTask({
+    const queueData: PaymentJobPayload = {
       ...validateRequest,
       checkout_id: checkOutId,
+      transaction_id: request_id,
       merchant_request_id: merchantRequestId,
-    });
+    };
+    await service.queuePaymentTask(queueData);
     child.info(
       { operation: "queuePaymentTask" },
       "Transaction queued successfully",
