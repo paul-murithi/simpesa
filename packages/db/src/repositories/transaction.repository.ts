@@ -6,6 +6,8 @@ import type {
   CreateTransactionDTO,
   ProcessTransactionResult,
   TransactionStatus,
+  WebhookDispatch,
+  WebhookJob,
 } from "@app/types";
 import {
   NotFoundError,
@@ -18,6 +20,7 @@ import {
 } from "@app/utils";
 import { TRANSACTION_STATUS } from "@app/types";
 import { Query } from "../client.js";
+import { webhookQueries } from "../types/webhooks.queries.js";
 
 export class TransactionRepository {
   /**
@@ -366,5 +369,12 @@ export class TransactionRepository {
       transactionQueries.GetTransactionWithCallbackByCheckoutID,
       [checkout_id],
     );
+  }
+
+  async fetchWebhookDispatch(
+    data: WebhookJob,
+  ): Promise<WebhookDispatch | null> {
+    return (await Query(webhookQueries.fetchDispatch, [data.dispatchId]))
+      .rows[0];
   }
 }

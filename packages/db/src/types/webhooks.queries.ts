@@ -5,4 +5,5 @@ export const webhookQueries = loadQueries<WebhookQueries>("webhooks.sql");
 interface WebhookQueries {
   [key: string]: string;
   createWebhookDispatch: string;
+  fetchDispatch: string;
 }

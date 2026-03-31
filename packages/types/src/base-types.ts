@@ -205,6 +205,26 @@ export type ErrorCallbackPayload = BaseCallback & {
 };
 
 export type CallbackPayload = SuccessCallbackPayload | ErrorCallbackPayload;
+export type DispatchStatus = "pending" | "delivered" | "failed" | "delivering";
+
+export type WebhookDispatch = {
+  id: string;
+  transaction_id: string;
+  checkout_id: string;
+  callback_url: string;
+  payload: CallbackPayload;
+
+  status: DispatchStatus;
+
+  attempt_count: number;
+  max_attempts: number;
+
+  next_retry_at: string;
+  last_attempt_at: string | null;
+
+  created_at: string;
+  updated_at: string;
+};
 
 export type WebhookJob = {
   dispatchId: string;
