@@ -1,6 +1,7 @@
 import { Queue } from "bullmq";
 import type { CreateTransactionDTO, WebhookJob } from "@app/types";
 import { logger } from "@app/utils";
+import { log } from "console";
 
 const connection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -30,6 +31,7 @@ export const addPaymentJob = async (transaction: CreateTransactionDTO) => {
 };
 
 export const addWebhookJob = async (job: WebhookJob) => {
+  logger.info("[Queue] Adding Webhook Job");
   return await webhookQueue.add("send-webhook", job, {
     jobId: `${job.dispatchId}-${job.event}`,
 

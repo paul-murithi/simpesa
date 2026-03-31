@@ -55,7 +55,7 @@ export const transactionProcessor = async (
 
     // Enqueue
     await addWebhookJob({ dispatchId: dispatchId, event: result.event });
-    child.info("[Queue] Webhook Job queued");
+    child.info("[Webhook Queue] Webhook Job successfully Queued");
 
     child.info("Transaction processed successfully");
   } catch (error) {
@@ -80,6 +80,7 @@ export const transactionProcessor = async (
 
       // Enqueue
       await addWebhookJob({ dispatchId: dispatchId, event: result.event });
+      child.info("[Webhook Queue] Webhook Job successfully Queued");
       return;
     }
 
@@ -89,7 +90,12 @@ export const transactionProcessor = async (
 };
 
 async function getBuiltPayload(data: WebHookJobEvent) {
+  const { checkoutId } = data;
+  const child = logger.child({ checkoutId });
+
+  child.info("[DB] Getting transaction Info to build Payload");
   const txResult = (await webHookService.getTransaction(data)).rows[0];
+
   const payload = await payloadBuilder(txResult);
   const callback_url = getCallbackUrl(txResult);
   return { payload, callback_url };
@@ -101,7 +107,9 @@ async function createWebhookDispatch(
   callback_url: string,
 ) {
   const { checkoutId, event } = data;
+  const child = logger.child({ checkoutId });
 
+  child.info("[DB] Creating Webhook Dispatch");
   const dispatch_id = (
     await Query(webhookQueries.createWebhookDispatch, [
       checkoutId,
