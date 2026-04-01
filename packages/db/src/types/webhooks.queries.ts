@@ -6,4 +6,9 @@ interface WebhookQueries {
   [key: string]: string;
   createWebhookDispatch: string;
   fetchDispatch: string;
+  logWebhookAttempt: string;
+  markWebhookDispatchDelivered: string;
+  markWebhookDispatchFailed: string;
+  getWebhookAttemptsByDispatch: string;
+  getPendingWebhookDispatches: string;
 }

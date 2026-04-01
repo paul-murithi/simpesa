@@ -243,6 +243,23 @@ export const WebhookEvent = {
 
 export type WebhookEvent = (typeof WebhookEvent)[keyof typeof WebhookEvent];
 
+export type WebhookResult = {
+  success: boolean;
+  status?: number;
+  body?: any;
+  error?: string;
+  duration_ms: number;
+};
+
+export type WebHookAttempt = {
+  dispatch_id: string;
+  attempt_number: number;
+  response_status?: number | undefined;
+  response_body?: string | undefined;
+  error_message?: string | undefined;
+  duration_ms?: number;
+};
+
 export type TransactionResult = {
   checkout_id: string;
   external_reference: string;

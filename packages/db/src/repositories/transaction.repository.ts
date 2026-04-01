@@ -6,6 +6,7 @@ import type {
   CreateTransactionDTO,
   ProcessTransactionResult,
   TransactionStatus,
+  WebHookAttempt,
   WebhookDispatch,
   WebhookJob,
 } from "@app/types";
@@ -21,6 +22,7 @@ import {
 import { TRANSACTION_STATUS } from "@app/types";
 import { Query } from "../client.js";
 import { webhookQueries } from "../types/webhooks.queries.js";
+import type { QueryResult } from "pg";
 
 export class TransactionRepository {
   /**
@@ -376,5 +378,32 @@ export class TransactionRepository {
   ): Promise<WebhookDispatch | null> {
     return (await Query(webhookQueries.fetchDispatch, [data.dispatchId]))
       .rows[0];
+  }
+
+  async insertWebHookAttempt(data: WebHookAttempt) {
+    const {
+      dispatch_id,
+      attempt_number,
+      response_status,
+      response_body,
+      error_message,
+      duration_ms,
+    } = data;
+    await Query(webhookQueries.logWebhookAttempt, [
+      dispatch_id,
+      attempt_number,
+      response_status,
+      response_body,
+      error_message,
+      duration_ms,
+    ]);
+  }
+
+  async markDispatchFailed(dispatchId: string) {
+    Query(webhookQueries.markWebhookDispatchFailed, [dispatchId]);
+  }
+
+  async markDispatchDelivered(dispatchId: string) {
+    Query(webhookQueries.markWebhookDispatchDelivered, [dispatchId]);
   }
 }
