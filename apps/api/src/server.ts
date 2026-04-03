@@ -27,7 +27,7 @@ app.use(express.json());
 app.use("/api", testRouter);
 app.use("/stkpush", stkRoute);
 
-app.post("/callback", (req, res) => {
+app.post("/callback/api", (req, res) => {
   const payload = req.body;
 
   if (payload?.Body?.stkCallback?.CallbackMetadata) {

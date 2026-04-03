@@ -32,14 +32,20 @@ FOR UPDATE;
 -- name: markWebhookDispatchDelivered
 UPDATE webhook_dispatches
 SET status = 'delivered',
+    last_attempt_number = $2,
     updated_at = now()
-WHERE id = $1;
+WHERE id = $1
+  AND last_attempt_number < $2
+  AND status != 'delivered';
 
 -- name: markWebhookDispatchFailed
 UPDATE webhook_dispatches
 SET status = 'failed',
+    last_attempt_number = $2,
     updated_at = now()
-WHERE id = $1;
+WHERE id = $1
+  AND last_attempt_number < $2
+  AND status != 'delivered';
 
 -- name: getWebhookAttemptsByDispatch
 SELECT *

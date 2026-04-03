@@ -399,11 +399,24 @@ export class TransactionRepository {
     ]);
   }
 
-  async markDispatchFailed(dispatchId: string) {
-    Query(webhookQueries.markWebhookDispatchFailed, [dispatchId]);
+  // async markDispatchFailed(dispatchId: string) {
+  //   Query(webhookQueries.markWebhookDispatchFailed, [dispatchId]);
+  // }
+
+  async markDispatchDelivered(dispatchId: string, attemptNumber: number) {
+    Query(webhookQueries.markWebhookDispatchDelivered, [
+      dispatchId,
+      attemptNumber,
+    ]);
   }
 
-  async markDispatchDelivered(dispatchId: string) {
-    Query(webhookQueries.markWebhookDispatchDelivered, [dispatchId]);
+  async markDispatchFailedPermanently(
+    dispatchId: string,
+    attemptNumber: number,
+  ) {
+    Query(webhookQueries.markWebhookDispatchFailed, [
+      dispatchId,
+      attemptNumber,
+    ]);
   }
 }

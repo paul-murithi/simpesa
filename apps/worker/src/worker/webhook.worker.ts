@@ -21,9 +21,6 @@ export const createWebhookWorker = () => {
     const isFinalFailure = job.attemptsMade >= (job.opts.attempts ?? 1);
     if (isFinalFailure) {
       const dispatchId = job.data.dispatchId;
-
-      await service.markDispatchFailed(dispatchId);
-
       logger.error(`[Webhook] Final failure for dispatch ${dispatchId}`);
     }
 

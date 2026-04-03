@@ -79,11 +79,11 @@ export class WebhookService {
     return await repo.fetchWebhookDispatch(data);
   }
 
-  async markDispatchFailed(dispatchId: string) {
-    await repo.markDispatchFailed(dispatchId);
+  async markWebhookDispatchFailed(dispatchId: string, attemptNumber: number) {
+    await repo.markDispatchFailedPermanently(dispatchId, attemptNumber);
   }
 
-  async markDispatchDelivered(dispatchId: string) {
-    await repo.markDispatchDelivered(dispatchId);
+  async markDispatchDelivered(dispatchId: string, attemptNumber: number) {
+    await repo.markDispatchDelivered(dispatchId, attemptNumber);
   }
 }

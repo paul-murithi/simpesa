@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS webhook_dispatches (
 
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now(),
+  last_attempt_number INTEGER DEFAULT 0
 
   CONSTRAINT webhook_dispatches_transaction_id_fkey
     FOREIGN KEY (transaction_id)

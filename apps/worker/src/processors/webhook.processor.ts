@@ -48,10 +48,17 @@ export const webhookProcessor = async (job: Job<WebhookJob>) => {
   if (!isSuccess) {
     const error = response.error;
     child.error({ error }, "Webhook delivery failed");
+
+    const isFinalAttempt = attemptNumber >= (job.opts.attempts ?? 1);
+
+    if (isFinalAttempt) {
+      await service.markWebhookDispatchFailed(dispatch.id, attemptNumber);
+    }
+
     throw new ExternalServiceError("Webhook delivery failed");
   }
 
   // Success delivery
-  await service.markDispatchDelivered(dispatch.id);
+  await service.markDispatchDelivered(dispatch.id, attemptNumber);
   child.info("Delivered webhook Successfully");
 };
