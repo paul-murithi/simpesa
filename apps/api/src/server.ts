@@ -27,16 +27,25 @@ app.use(express.json());
 app.use("/api", testRouter);
 app.use("/stkpush", stkRoute);
 
-app.post("/callback/api", (req, res) => {
+// Callback mock route
+app.post("/callback", (req, res) => {
+  const shouldFail = req.query.fail === "true";
+
+  if (shouldFail) {
+    console.log("[Mock Callback] FORCED FAILURE");
+    return res.status(500).send({ status: "forced failure" });
+  }
+
   const payload = req.body;
 
   if (payload?.Body?.stkCallback?.CallbackMetadata) {
     console.log("[Mock Callback] SUCCESS payload received:");
-    console.log(JSON.stringify(payload, null, 2));
   } else {
     console.log("[Mock Callback] ERROR payload received:");
-    console.log(JSON.stringify(payload, null, 2));
   }
+
+  console.log(JSON.stringify(payload, null, 2));
+
   res.status(200).send({ status: "ok" });
 });
 
