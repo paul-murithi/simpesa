@@ -15,15 +15,20 @@ const repo = new TransactionRepository();
 export class WebhookService {
   async dispatchWebhook(dispatch: WebhookDispatch): Promise<WebhookResult> {
     const { callback_url, payload } = dispatch;
+    const shouldSucceed = true;
 
     const start = Date.now();
 
     try {
-      const response = await axios.post(callback_url, payload, {
-        headers: {
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        shouldSucceed ? callback_url : `${callback_url}?fail=true`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const duration = Date.now() - start;
 
