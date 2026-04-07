@@ -52,5 +52,7 @@ export class ExternalServiceError extends BaseError {
   }
 }
 
+export class UnauthorizedError extends BaseError {}
+
 export class InvalidStateError extends DomainError {}
 export class InsufficientFundsError extends DomainError {}

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { BaseError, NotFoundError } from "@app/utils";
+import { BaseError, NotFoundError, UnauthorizedError } from "@app/utils";
 
 export function errorHandler(
   err: unknown,
@@ -14,6 +14,11 @@ export function errorHandler(
     return res.status(err.statusCode).json({
       message: err.message,
       developerHint: err.developerHint,
+    });
+  }
+  if (err instanceof UnauthorizedError) {
+    return res.status(401).json({
+      message: "User unauthorized",
     });
   }
 

@@ -6,6 +6,11 @@ import type { Request } from "express";
 export interface StampedRequest<Body = any> extends Request<any, any, Body> {
   timestamp?: string;
 }
+
+export interface AuthenticatedRequest extends Request {
+  merchantId: string;
+}
+
 export type QueryFn = (text: string, params?: any[]) => Promise<any>;
 
 export type UUID = string;

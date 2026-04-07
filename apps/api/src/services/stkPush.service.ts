@@ -6,6 +6,7 @@ import { addPaymentJob } from "@app/queue";
 import {
   ExternalServiceError,
   NotFoundError,
+  UnauthorizedError,
   ValidationError,
 } from "@app/utils";
 import {
@@ -16,7 +17,6 @@ import {
   type CreateTransactionDTO,
   type CreateTransactionRequestDTO,
   type PaymentJobPayload,
-  type StkPushRequest,
   type StkPushResponse,
   type TransactionStatus,
 } from "@app/types";
