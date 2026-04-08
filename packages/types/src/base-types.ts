@@ -11,6 +11,16 @@ export interface AuthenticatedRequest extends Request {
   merchantId: string;
 }
 
+export interface AuthRequest extends Request {
+  short_code: string;
+  passkey: string;
+}
+
+export type AuthBody = {
+  short_code: string;
+  passkey: string;
+};
+
 export type QueryFn = (text: string, params?: any[]) => Promise<any>;
 
 export type UUID = string;

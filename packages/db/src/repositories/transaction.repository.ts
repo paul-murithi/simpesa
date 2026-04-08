@@ -321,12 +321,6 @@ export class TransactionRepository {
     return await db.query(userQueries.findUserByPhoneNumber, [phone_number]);
   }
 
-  async findMerchantByShortCode(short_code: string) {
-    return await db.query(merchantQueries.findMerchantByShortCode, [
-      short_code,
-    ]);
-  }
-
   async insertNewTransaction(
     transaction: CreateTransactionDTO,
     metadata: string,

@@ -1,5 +1,9 @@
-import { UnauthorizedError } from "@app/utils";
+import { NotFoundError, UnauthorizedError } from "@app/utils";
 import { redisClient } from "../lib/redisClient.js";
+import { AuthRepository } from "@app/db";
+import type { AuthBody, Merchant } from "@app/types";
+
+const repo = new AuthRepository();
 
 export class AuthService {
   async getMerchantFromToken(token: string) {
@@ -18,5 +22,26 @@ export class AuthService {
     }
 
     return parts[1];
+  }
+
+  async getMerchant(short_code: string): Promise<Merchant> {
+    const merchantResult = await repo.findMerchantByShortCode(short_code);
+    if (merchantResult.rowCount === 0) {
+      throw new NotFoundError(
+        `Merchant with short code ${short_code} not found`,
+      );
+    }
+    const merchant = merchantResult.rows[0];
+    return merchant;
+  }
+
+  // TODO: Add Zod validation
+  async validateAuthRequest(data: AuthBody) {
+    return {};
+  }
+
+  async passKeyMatches(passkey: string, merchant: Merchant) {
+    // TODO: Add actual check
+    const { pass_key: DbPasskey } = merchant;
   }
 }

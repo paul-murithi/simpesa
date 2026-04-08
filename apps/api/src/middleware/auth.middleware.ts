@@ -1,5 +1,5 @@
 import { logger, UnauthorizedError } from "@app/utils";
-import type { RequestHandler, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service.js";
 import type { AuthenticatedRequest } from "@app/types";
 
