@@ -1,26 +1,34 @@
 import type { Response, Request } from "express";
-import { logger, NotFoundError } from "@app/utils";
+import { logger, NotFoundError, UnauthorizedError } from "@app/utils";
 import { AuthService } from "../services/auth.service.js";
 import type { AuthBody } from "@app/types";
+import { AuthUtils } from "../utils/auth.utils.js";
 
 const service = new AuthService();
+const utils = new AuthUtils();
 
 export async function authController(
   req: Request<{}, {}, AuthBody>,
   res: Response,
 ) {
   // TODO: Add actual implementation for validation
-  const validate = await service.validateAuthRequest(req.body);
+  // const validate = await service.validateAuthRequest(req.body);
 
   const { passkey, short_code } = req.body;
   const merchant = await service.getMerchant(short_code);
   if (!merchant) {
     throw new NotFoundError(
-      "The merchant with the given short code does not existh",
+      "The merchant with the given short code does not exist",
     );
   }
 
-  const passkeyValid = service.passKeyMatches(passkey, merchant);
+  if (!(await service.passKeyMatches(passkey, merchant))) {
+    throw new UnauthorizedError("The passkey is invalid/incorrect");
+  }
 
-  // TODO: valid ? Generate token, store in redis, return token : throw error
+  const token = utils.generateAuthToken(merchant.id);
+
+  await service.saveTokenToRedis(token, merchant.id);
+
+  return res.status(200).json({ token: token });
 }

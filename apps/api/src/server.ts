@@ -27,7 +27,7 @@ app.use(express.json());
 // Routes
 app.use("/api", testRouter);
 app.use("/stkpush", stkRoute);
-app.use("oauth/v1", authRoute);
+app.use("/oauth/v1", authRoute);
 
 // Callback mock route
 app.post("/callback", (req, res) => {
