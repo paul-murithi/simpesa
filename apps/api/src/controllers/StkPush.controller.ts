@@ -20,7 +20,7 @@ export const StkPushController: RequestHandler<
   any,
   StkPushResponse,
   StkPushRequest
-> = async (req: StampedRequest<StkPushRequest>, res) => {
+> = async (req: Request<StkPushRequest>, res) => {
   const validateRequest = service.validateStkRequest(req.body);
   const timestamp = req.timestamp!;
 
