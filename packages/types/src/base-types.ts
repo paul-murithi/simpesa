@@ -322,6 +322,14 @@ export type TransactionMetadata = {
     lastAttemptAt?: string;
   };
 
+  processing?: {
+    started_at?: string;
+    finalized_at?: string;
+    failed_at?: string;
+    status?: string;
+    message?: string;
+  };
+
   simulation?: {
     mode?: "AUTO" | "MANUAL";
     pinEntered?: boolean;

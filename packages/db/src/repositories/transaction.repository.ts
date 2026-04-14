@@ -47,6 +47,8 @@ export class TransactionRepository {
       [checkout_id],
     );
     const status = statusResult.rows[0]?.status;
+    const currentMetadata = statusResult.rows[0]?.metadata || {};
+
     if (status === SUCCESS || status === FAILED) {
       child.error(
         `Terminal state revert attempt. Already ${status}. Ignoring.`,
@@ -110,10 +112,19 @@ export class TransactionRepository {
       }
 
       // Transition state to processing
+      const processingMetadata = JSON.stringify({
+        ...currentMetadata,
+        processing: {
+          ...(currentMetadata.processing || {}),
+          started_at: new Date().toISOString(),
+          status: "PROCESSING",
+        },
+      });
       await client.query(transactionQueries.markTransactionProcessing, [
         PROCESSING,
         checkout_id,
         PENDING,
+        processingMetadata,
       ]);
       child.info(
         "Completed Phase-1 Transaction processing, Status updated to processing",
@@ -123,6 +134,18 @@ export class TransactionRepository {
       await client.query("COMMIT");
     } catch (error) {
       const resultCode = this.getResultCode(error);
+      const errorMetadata = JSON.stringify({
+        ...currentMetadata,
+        error: {
+          message: error instanceof Error ? error.message : "Unknown error",
+          code: resultCode,
+        },
+        processing: {
+          ...(currentMetadata.processing || {}),
+          failed_at: new Date().toISOString(),
+          status: "FAILED",
+        },
+      });
       try {
         // Rollback the transaction
         await client.query("ROLLBACK");
@@ -137,6 +160,7 @@ export class TransactionRepository {
           checkout_id,
           TRANSACTION_STATUS.PENDING,
           resultCode,
+          errorMetadata,
         );
       throw error;
     } finally {
@@ -161,6 +185,7 @@ export class TransactionRepository {
     const child = logger.child({ checkoutId: checkout_id });
 
     const client = await db.connect();
+    let currentMetadata: any = {};
 
     try {
       await client.query("BEGIN");
@@ -172,6 +197,7 @@ export class TransactionRepository {
         [checkout_id],
       );
       const status = txResult.rows[0]?.status;
+      currentMetadata = txResult.rows[0]?.metadata || {};
 
       if (!status) {
         child.error("No transaction found for provided checkout id");
@@ -223,12 +249,22 @@ export class TransactionRepository {
         short_code,
       ]);
 
+      const successMetadata = JSON.stringify({
+        ...currentMetadata,
+        processing: {
+          ...(currentMetadata.processing || {}),
+          finalized_at: new Date().toISOString(),
+          status: "SUCCESS",
+        },
+      });
+
       // Update status to terminal state
       await client.query(transactionQueries.markTransactionSuccess, [
         TRANSACTION_STATUS.SUCCESS,
         checkout_id,
         TRANSACTION_STATUS.PROCESSING,
         RESULT_CODES.SUCCESS,
+        successMetadata,
       ]);
       child.info(
         "Completed Phase-2 Database Transaction, Status updated to terminal state SUCCESS",
@@ -241,6 +277,18 @@ export class TransactionRepository {
       };
     } catch (error) {
       const resultCode = this.getResultCode(error);
+      const errorMetadata = JSON.stringify({
+        ...currentMetadata,
+        error: {
+          message: error instanceof Error ? error.message : "Unknown error",
+          code: resultCode,
+        },
+        processing: {
+          ...(currentMetadata.processing || {}),
+          failed_at: new Date().toISOString(),
+          status: "FAILED",
+        },
+      });
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
@@ -262,6 +310,7 @@ export class TransactionRepository {
             checkout_id,
             TRANSACTION_STATUS.PROCESSING,
             resultCode,
+            errorMetadata,
           );
           child.info("Transaction state updated to FAILED");
         }
@@ -298,15 +347,25 @@ export class TransactionRepository {
     checkout_id: string,
     fromStatus: TransactionStatus,
     resultCode: number,
+    metadata?: string,
   ): Promise<void> {
     const child = logger.child({ checkoutId: checkout_id });
     const { FAILED } = TRANSACTION_STATUS;
+    const finalMetadata =
+      metadata ||
+      JSON.stringify({
+        processing: {
+          failed_at: new Date().toISOString(),
+          status: "FAILED",
+        },
+      });
     try {
       await db.query(transactionQueries.markTransactionFailed, [
         FAILED,
         checkout_id,
         fromStatus,
         resultCode,
+        finalMetadata,
       ]);
       child.info("Transaction marked as FAILED");
     } catch (error) {
@@ -396,6 +455,13 @@ export class TransactionRepository {
   // async markDispatchFailed(dispatchId: string) {
   //   Query(webhookQueries.markWebhookDispatchFailed, [dispatchId]);
   // }
+
+  async updateTransactionMetadata(request_id: string, metadata: string) {
+    return await db.query(transactionQueries.updateTransactionMetadata, [
+      request_id,
+      metadata,
+    ]);
+  }
 
   async markDispatchDelivered(dispatchId: string, attemptNumber: number) {
     Query(webhookQueries.markWebhookDispatchDelivered, [

@@ -76,8 +76,22 @@ export class WebhookService {
     return await repo.getTransactionByCheckoutId(checkoutId);
   }
 
-  async logWebhookAttempt(data: WebHookAttempt) {
+  async logWebhookAttempt(data: WebHookAttempt, transaction_id?: string) {
     await repo.insertWebHookAttempt(data);
+    if (transaction_id) {
+      const metadata = JSON.stringify({
+        callback: {
+          lastAttemptAt: new Date().toISOString(),
+          attempts: data.attempt_number,
+          lastResponse: {
+            status: data.response_status,
+            body: data.response_body,
+            error: data.error_message,
+          },
+        },
+      });
+      await repo.updateTransactionMetadata(transaction_id, metadata);
+    }
   }
 
   async fetchWebhookDispatch(data: WebhookJob) {

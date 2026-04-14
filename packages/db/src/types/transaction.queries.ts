@@ -17,4 +17,5 @@ interface transactionQueries {
   markTransactionFailed: string;
   getTransactionStatusByCheckoutId: string;
   hasActiveTransactionForUser: string;
+  updateTransactionMetadata: string;
 }

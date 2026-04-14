@@ -42,7 +42,7 @@ export const webhookProcessor = async (job: Job<WebhookJob>) => {
     duration_ms: response.duration_ms,
   };
 
-  await service.logWebhookAttempt(webhookData);
+  await service.logWebhookAttempt(webhookData, dispatch.transaction_id);
 
   // result for BullMQ retrying
   if (!isSuccess) {

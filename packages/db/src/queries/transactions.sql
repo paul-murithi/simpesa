@@ -25,7 +25,7 @@ ON CONFLICT (checkout_id) DO NOTHING
 RETURNING request_id;
 
 -- name: getTransactionStatusByCheckoutId
-SELECT "status" FROM transactions WHERE checkout_id = $1;
+SELECT "status", metadata FROM transactions WHERE checkout_id = $1;
 
 -- name: GetTransactionWithCallbackByCheckoutID
 SELECT
@@ -50,7 +50,8 @@ WHERE
 UPDATE transactions
 SET
     "status" = $1,
-    result_code = $4
+    result_code = $4,
+    metadata = metadata || $5::jsonb
 WHERE
     checkout_id = $2
     AND "status" = $3;
@@ -58,13 +59,15 @@ WHERE
 
 -- name: markTransactionProcessing
 UPDATE transactions
-SET "status" = $1
+SET 
+    "status" = $1,
+    metadata = metadata || $4::jsonb
 WHERE
     checkout_id = $2
     AND "status" = $3;
 
 -- name: lockTransactionsByCheckoutId
-SELECT "status" FROM transactions
+SELECT "status", metadata FROM transactions
 WHERE checkout_id = $1
 FOR UPDATE;
 
@@ -72,7 +75,8 @@ FOR UPDATE;
 UPDATE transactions
 SET
     "status" = $1,
-    result_code = $4
+    result_code = $4,
+    metadata = metadata || $5::jsonb
 WHERE
     checkout_id = $2
     AND "status" = $3;
@@ -85,3 +89,8 @@ SELECT EXISTS (
     AND "status" = 'PROCESSING'
     AND checkout_id != $2
 ) AS has_active_transaction;
+
+-- name: updateTransactionMetadata
+UPDATE transactions
+SET metadata = metadata || $2::jsonb
+WHERE request_id = $1;

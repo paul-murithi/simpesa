@@ -1,12 +1,12 @@
 import { logger, UnauthorizedError } from "@app/utils";
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service.js";
 import type { AuthenticatedRequest } from "@app/types";
 
 const service = new AuthService();
 
 export const authMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -21,7 +21,7 @@ export const authMiddleware = async (
       throw new UnauthorizedError("User unauthorized");
     }
 
-    req.merchantId = merchantId;
+    (req as AuthenticatedRequest).merchantId = merchantId;
 
     return next();
   } catch (err) {
