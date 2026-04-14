@@ -13,7 +13,8 @@ const utils = new AuthUtils();
 
 export class AuthService {
   async getMerchantFromToken(token: string) {
-    return await redisClient.get(token);
+    if (!token) return null;
+    return await redisClient.get(`auth:token:${token.trim()}`);
   }
 
   getTokenFromHeader(header: string | undefined) {
