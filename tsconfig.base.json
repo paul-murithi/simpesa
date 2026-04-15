@@ -15,14 +15,13 @@
     "exactOptionalPropertyTypes": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
-      "@app/db": ["packages/db/src"],
-      "@app/queue": ["packages/queue/src"],
-      "@app/types": ["packages/types/src"],
-      "@app/utils": ["packages/utils/src"],
-      "apps/api/*": ["apps/api/src/*"],
-      "apps/worker/*": ["apps/worker/src/*"]
+      "@app/db": ["./packages/db/src/index.ts"],
+      "@app/queue": ["./packages/queue/src/index.ts"],
+      "@app/types": ["./packages/types/src/index.ts"],
+      "@app/utils": ["./packages/utils/src/index.ts"],
+      "apps/api/*": ["./apps/api/src/*"],
+      "apps/worker/*": ["./apps/worker/src/*"]
     }
   }
 }

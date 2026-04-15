@@ -59,7 +59,7 @@ WHERE
 
 -- name: markTransactionProcessing
 UPDATE transactions
-SET 
+SET
     "status" = $1,
     metadata = metadata || $4::jsonb
 WHERE
