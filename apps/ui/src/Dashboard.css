@@ -39,12 +39,74 @@
   z-index: 10;
 }
 
+.top-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.brand-logo {
+  font-size: 0.83rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 0.32rem 0.55rem;
+  border: 1px solid rgba(31, 111, 235, 0.25);
+  border-radius: 0.5rem;
+  background-color: #f2f7ff;
+  white-space: nowrap;
+}
+
+.page-context {
+  min-width: 0;
+}
+
+.page-context h1 {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.page-context p {
+  margin: 0.1rem 0 0;
+  font-size: 0.76rem;
+  color: var(--text-tertiary);
+}
+
+.top-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
 .system-status {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.reconnect-hint {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.top-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.last-update {
+  font-size: 0.76rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 .status-dot {
@@ -107,10 +169,14 @@
 }
 
 .transaction-card {
+  appearance: none;
   display: grid;
   grid-template-columns: 1.5fr 0.9fr 1fr 0.9fr 1.3fr;
   align-items: center;
   gap: 0.625rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
   padding: 0.875rem 1rem;
   background-color: var(--surface);
   border-radius: 0.75rem;
@@ -125,6 +191,12 @@
 .transaction-card:hover {
   border-color: #c3cfdd;
   box-shadow: var(--shadow-md);
+}
+
+.transaction-card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15);
 }
 
 .phone {
@@ -352,6 +424,19 @@
 @media (max-width: 560px) {
   .top-bar {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .top-identity {
+    width: 100%;
+  }
+
+  .top-meta {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .top-summary {
     align-items: flex-start;
   }
 

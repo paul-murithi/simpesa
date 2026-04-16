@@ -13,6 +13,8 @@ export const useDashboardTransactions = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [hasEverConnected, setHasEverConnected] = useState<boolean>(false);
+  const [lastUpdateAt, setLastUpdateAt] = useState<Date | null>(null);
   const [selectedTx, setSelectedTx] = useState<TransactionUI | null>(null);
 
   useEffect(() => {
@@ -29,7 +31,10 @@ export const useDashboardTransactions = () => {
 
     const eventSource = new EventSource(TRANSACTIONS_STREAM_URL);
 
-    eventSource.onopen = () => setIsConnected(true);
+    eventSource.onopen = () => {
+      setIsConnected(true);
+      setHasEverConnected(true);
+    };
     eventSource.onerror = () => setIsConnected(false);
 
     eventSource.onmessage = (event) => {
@@ -39,6 +44,7 @@ export const useDashboardTransactions = () => {
         setTransactions((previousTransactions) =>
           upsertTransaction(previousTransactions, updatedTx),
         );
+        setLastUpdateAt(new Date());
 
         setSelectedTx((currentTx) =>
           currentTx?.checkout_id === updatedTx.checkout_id
@@ -68,6 +74,8 @@ export const useDashboardTransactions = () => {
     searchQuery,
     setSearchQuery,
     isConnected,
+    isReconnecting: !isConnected && hasEverConnected,
+    lastUpdateAt,
     selectedTx,
     setSelectedTx,
   };

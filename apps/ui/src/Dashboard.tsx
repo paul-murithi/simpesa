@@ -9,6 +9,11 @@ import {
 } from "./utils/dashboard";
 import "./Dashboard.css";
 
+const formatUpdateTime = (date: Date | null) => {
+  if (!date) return "Waiting for updates";
+  return date.toLocaleTimeString();
+};
+
 const Dashboard: React.FC = () => {
   const {
     filteredTransactions,
@@ -17,6 +22,8 @@ const Dashboard: React.FC = () => {
     searchQuery,
     setSearchQuery,
     isConnected,
+    isReconnecting,
+    lastUpdateAt,
     selectedTx,
     setSelectedTx,
   } = useDashboardTransactions();
@@ -24,14 +31,32 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard-container">
       <div className="top-bar">
-        <div className="system-status">
-          <div
-            className={`status-dot ${isConnected ? "connected" : "disconnected"}`}
-          ></div>
-          <span>{isConnected ? "LIVE MONITORING" : "DISCONNECTED"}</span>
+        <div className="top-identity">
+          <div className="brand-logo" aria-label="Sim-Pesa">
+            Sim-Pesa
+          </div>
+          <div className="page-context">
+            <h1>Transactions Dashboard</h1>
+            <p>Real-time transaction lifecycle monitor</p>
+          </div>
         </div>
-        <div>
-          <strong>{filteredTransactions.length}</strong> Transactions Shown
+
+        <div className="top-meta">
+          <div className="system-status">
+            <div
+              className={`status-dot ${isConnected ? "connected" : "disconnected"}`}
+            ></div>
+            <span>{isConnected ? "LIVE MONITORING" : "DISCONNECTED"}</span>
+            {isReconnecting && (
+              <span className="reconnect-hint">Reconnecting...</span>
+            )}
+          </div>
+          <div className="top-summary">
+            <strong>{filteredTransactions.length}</strong> Transactions Shown
+            <span className="last-update">
+              Last update: {formatUpdateTime(lastUpdateAt)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -59,9 +84,11 @@ const Dashboard: React.FC = () => {
       <div className="transaction-feed">
         <div className="transaction-list">
           {filteredTransactions.map((tx) => (
-            <div
+            <button
               key={tx.checkout_id}
+              type="button"
               className="transaction-card"
+              aria-label={`Open transaction ${tx.checkout_id}`}
               onClick={() => setSelectedTx(tx)}
             >
               <div className="phone">
@@ -82,7 +109,7 @@ const Dashboard: React.FC = () => {
               <div className="checkout-id" title={tx.checkout_id}>
                 ID: {formatTransactionCheckoutPreview(tx.checkout_id)}
               </div>
-            </div>
+            </button>
           ))}
           {filteredTransactions.length === 0 && (
             <div className="empty-state">No transactions found</div>
