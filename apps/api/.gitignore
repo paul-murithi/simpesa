@@ -1,0 +1,4 @@
+// Build info
+build-info.json
+tsconfig.tsbuildinfo
+*.tsbuildinfo
