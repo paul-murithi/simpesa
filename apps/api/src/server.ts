@@ -6,6 +6,7 @@ import stkRoute from "./routes/stkpush.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "@app/utils";
 import authRoute from "./routes/auth.route.js";
+import transactionsRoute from "./routes/transactions.route.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api", testRouter);
+app.use("/api/transactions", transactionsRoute);
 app.use("/stkpush", stkRoute);
 app.use("/oauth/v1", authRoute);
 
