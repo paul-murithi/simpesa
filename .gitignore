@@ -17,3 +17,6 @@ yarn-error.log
 .env.production.local
 .env.docker
 concurrency.ts
+
+// Typescrpt
+*.tsbuildinfo

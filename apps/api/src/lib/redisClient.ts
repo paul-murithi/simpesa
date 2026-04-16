@@ -11,14 +11,40 @@ export const redisClient = createClient({
   },
 });
 
+export const redisPublisher = createClient({
+  socket: {
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+  },
+});
+
+export const redisSubscriber = createClient({
+  socket: {
+    host: REDIS_HOST,
+    port: REDIS_PORT,
+  },
+});
+
 redisClient.on("error", (err: Error) =>
   console.error("[Redis] Client Error:", err),
+);
+redisPublisher.on("error", (err: Error) =>
+  console.error("[Redis Publisher] Error:", err),
+);
+redisSubscriber.on("error", (err: Error) =>
+  console.error("[Redis Subscriber] Error:", err),
 );
 
 export const connectRedis = async () => {
   if (!redisClient.isOpen) {
     await redisClient.connect();
     logger.info(`[Redis] Connected to ${REDIS_HOST}:${REDIS_PORT}`);
+  }
+  if (!redisPublisher.isOpen) {
+    await redisPublisher.connect();
+  }
+  if (!redisSubscriber.isOpen) {
+    await redisSubscriber.connect();
   }
 };
 
@@ -27,6 +53,22 @@ export const closeRedis = async () => {
     logger.info("[Redis] Closing connection...");
     await redisClient.quit();
   }
+  if (redisPublisher.isOpen) {
+    await redisPublisher.quit();
+  }
+  if (redisSubscriber.isOpen) {
+    await redisSubscriber.quit();
+  }
+};
+
+export const publishTransactionUpdate = async (transaction: any) => {
+  if (!redisPublisher.isOpen) {
+    await redisPublisher.connect();
+  }
+  await redisPublisher.publish(
+    "transactions:updates",
+    JSON.stringify(transaction),
+  );
 };
 
 const handleShutdown = async () => {
