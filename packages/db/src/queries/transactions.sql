@@ -94,3 +94,19 @@ SELECT EXISTS (
 UPDATE transactions
 SET metadata = metadata || $2::jsonb
 WHERE request_id = $1;
+
+-- name: listRecentTransactions
+SELECT
+    checkout_id,
+    external_reference,
+    short_code,
+    phone_number,
+    amount,
+    "status",
+    created_at,
+    metadata
+FROM
+    transactions
+ORDER BY
+    created_at DESC
+LIMIT $1;

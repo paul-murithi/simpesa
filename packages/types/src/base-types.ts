@@ -142,6 +142,13 @@ export interface Transaction {
   expires_at: Date;
 }
 
+export type TransactionUI = Omit<
+  Transaction,
+  "created_at" | "expires_at" | "request_id" | "result_code" | "metadata"
+> & {
+  created_at: string;
+  metadata?: any;
+};
 export type TransactionBase = {
   short_code: string;
   phone_number: string;

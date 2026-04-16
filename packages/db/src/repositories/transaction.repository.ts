@@ -22,7 +22,6 @@ import {
 import { TRANSACTION_STATUS } from "@app/types";
 import { Query } from "../client.js";
 import { webhookQueries } from "../types/webhooks.queries.js";
-import type { QueryResult } from "pg";
 
 export class TransactionRepository {
   /**
@@ -33,14 +32,26 @@ export class TransactionRepository {
   async lockRowsValidate(transaction: CreateTransactionDTO) {
     const {
       amount: transactionAmount,
-      external_reference,
       short_code,
       phone_number,
       checkout_id,
+      external_reference,
+      merchant_request_id,
     } = transaction;
     const child = logger.child({ checkoutId: checkout_id });
 
     const { PROCESSING, PENDING, SUCCESS, FAILED } = TRANSACTION_STATUS;
+
+    // Ensure transaction exists
+    await db.query(transactionQueries.ensureTransaction, [
+      checkout_id,
+      external_reference,
+      short_code,
+      phone_number,
+      transactionAmount,
+      JSON.stringify({}),
+      merchant_request_id || null,
+    ]);
 
     const statusResult = await db.query(
       transactionQueries.getTransactionStatusByCheckoutId,
@@ -177,7 +188,6 @@ export class TransactionRepository {
   ): Promise<ProcessTransactionResult> {
     const {
       checkout_id,
-      external_reference,
       short_code,
       phone_number,
       amount: transactionAmount,
@@ -380,6 +390,12 @@ export class TransactionRepository {
     return await db.query(userQueries.findUserByPhoneNumber, [phone_number]);
   }
 
+  async findMerchantByShortCode(short_code: string) {
+    return await db.query(merchantQueries.findMerchantByShortCode, [
+      short_code,
+    ]);
+  }
+
   async insertNewTransaction(
     transaction: CreateTransactionDTO,
     metadata: string,
@@ -452,15 +468,18 @@ export class TransactionRepository {
     ]);
   }
 
-  // async markDispatchFailed(dispatchId: string) {
-  //   Query(webhookQueries.markWebhookDispatchFailed, [dispatchId]);
-  // }
-
   async updateTransactionMetadata(request_id: string, metadata: string) {
     return await db.query(transactionQueries.updateTransactionMetadata, [
       request_id,
       metadata,
     ]);
+  }
+
+  async listRecentTransactions(limit: number = 50) {
+    const result = await db.query(transactionQueries.listRecentTransactions, [
+      limit,
+    ]);
+    return result.rows;
   }
 
   async markDispatchDelivered(dispatchId: string, attemptNumber: number) {

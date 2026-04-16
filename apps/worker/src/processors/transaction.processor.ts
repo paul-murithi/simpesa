@@ -92,6 +92,7 @@ export const transactionProcessor = async (
       // Enqueue
       await addWebhookJob({ dispatchId: dispatchId, event: result.event });
       child.info("[Webhook Queue] Webhook Job successfully Queued");
+      await service.publish(checkout_id);
       return;
     }
 
