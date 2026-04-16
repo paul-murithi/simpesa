@@ -26,11 +26,7 @@ const Dashboard: React.FC = () => {
       <div className="top-bar">
         <div className="system-status">
           <div
-            className={`status-dot ${isConnected ? "" : "disconnected"}`}
-            style={{
-              backgroundColor: isConnected ? "#22c55e" : "#ef4444",
-              boxShadow: `0 0 8px ${isConnected ? "#22c55e" : "#ef4444"}`,
-            }}
+            className={`status-dot ${isConnected ? "connected" : "disconnected"}`}
           ></div>
           <span>{isConnected ? "LIVE MONITORING" : "DISCONNECTED"}</span>
         </div>
@@ -70,9 +66,7 @@ const Dashboard: React.FC = () => {
             >
               <div className="phone">
                 {tx.phone_number}
-                <div style={{ fontSize: "0.7rem", color: "#475569" }}>
-                  SC: {tx.short_code}
-                </div>
+                <div className="short-code">SC: {tx.short_code}</div>
               </div>
               <div className="amount">
                 KES {formatTransactionAmount(tx.amount)}
@@ -91,11 +85,7 @@ const Dashboard: React.FC = () => {
             </div>
           ))}
           {filteredTransactions.length === 0 && (
-            <div
-              style={{ textAlign: "center", padding: "2rem", color: "#64748b" }}
-            >
-              No transactions found
-            </div>
+            <div className="empty-state">No transactions found</div>
           )}
         </div>
       </div>
