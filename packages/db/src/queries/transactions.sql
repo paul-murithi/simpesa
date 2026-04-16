@@ -31,11 +31,14 @@ SELECT "status", metadata FROM transactions WHERE checkout_id = $1;
 SELECT
     t.checkout_id,
     t.external_reference,
+    t.short_code,
     t.merchant_request_id,
     t.phone_number,
     t.amount,
     t.status,
     t.result_code,
+    t.created_at,
+    t.metadata,
     m.callback_url
 FROM
     transactions t
