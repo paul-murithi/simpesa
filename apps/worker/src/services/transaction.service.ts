@@ -8,10 +8,15 @@ const repo = new TransactionRepository();
 
 const REDIS_HOST = process.env.REDIS_HOST || "localhost";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
+const PROCESSING_VISIBILITY_DELAY_MS = parseInt(
+  process.env.PROCESSING_VISIBILITY_DELAY_MS || "5000",
+);
 const redisPublisher = createClient({
   socket: { host: REDIS_HOST, port: REDIS_PORT },
 });
 redisPublisher.connect().catch(console.error);
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class TransactionService {
   async publish(checkout_id: string) {
@@ -42,6 +47,9 @@ export class TransactionService {
     // Phase 1: Lock rows and validate balance
     await repo.lockRowsValidate(transactionalData);
     await this.publish(checkout_id);
+
+    // Keep PROCESSING visible long enough for dashboard SSE subscribers.
+    await wait(PROCESSING_VISIBILITY_DELAY_MS);
 
     // TODO: STK Push logic
 

@@ -13,6 +13,10 @@ export const filterTransactions = (
   statusFilter: string,
   searchQuery: string,
 ) => {
+  if (!Array.isArray(transactions)) {
+    return [];
+  }
+
   const normalizedSearch = searchQuery.trim();
 
   return transactions.filter((transaction) => {

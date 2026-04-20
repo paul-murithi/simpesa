@@ -2,8 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import { type TransactionUI } from "@app/types";
 import { filterTransactions, upsertTransaction } from "../utils/dashboard";
 
-const TRANSACTIONS_API_URL = "http://localhost:3000/api/transactions";
-const TRANSACTIONS_STREAM_URL = "http://localhost:3000/api/transactions/stream";
+const normalizeBaseUrl = (baseUrl: string) => baseUrl.replace(/\/$/, "");
+
+const getApiUrl = (path: string) => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+
+  if (!configuredBaseUrl) {
+    if (import.meta.env.DEV) {
+      return path;
+    }
+
+    return `${window.location.protocol}//${window.location.hostname}:3000${path}`;
+  }
+
+  return `${normalizeBaseUrl(configuredBaseUrl)}${path}`;
+};
+
+const TRANSACTIONS_API_URL = getApiUrl("/api/transactions");
+const TRANSACTIONS_STREAM_URL = getApiUrl("/api/transactions/stream");
 
 const isAbortError = (error: unknown) =>
   error instanceof DOMException && error.name === "AbortError";
@@ -62,12 +78,15 @@ export const useDashboardTransactions = () => {
     };
   }, []);
 
+  console.log(transactions);
+
   const filteredTransactions = useMemo(
     () => filterTransactions(transactions, statusFilter, searchQuery),
     [transactions, statusFilter, searchQuery],
   );
 
   return {
+    transactions,
     filteredTransactions,
     statusFilter,
     setStatusFilter,
