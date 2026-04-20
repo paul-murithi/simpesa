@@ -80,7 +80,7 @@ export class AuthService {
       arguments: [
         token,
         merchantId,
-        "1000", // TODO: 80 for testing
+        "3600", // TODO: 80 for testing
       ],
     });
 
