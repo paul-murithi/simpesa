@@ -13,6 +13,13 @@ interface Migration {
   sql: string;
 }
 
+const seedFilePath = join(
+  __dirname,
+  "../../..",
+  "scripts",
+  "seed-dev-data.sql",
+);
+
 /**
  * Load all migration files from the migrations directory
  */
@@ -52,6 +59,37 @@ async function getAppliedMigrations(): Promise<Set<number>> {
 }
 
 /**
+ * Seed development fixtures
+ */
+export async function seedDevelopmentData(): Promise<void> {
+  console.log("Seeding development data...\n");
+
+  const seedSql = readFileSync(seedFilePath, "utf-8").trim();
+
+  if (!seedSql) {
+    console.log("Seed file is empty. Skipping development data seed.\n");
+    return;
+  }
+
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(seedSql);
+    await client.query("COMMIT");
+    console.log("Development data seeded successfully!\n");
+  } catch (err) {
+    await client.query("ROLLBACK");
+
+    console.error("Failed to seed development data");
+    console.error(err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * Run pending migrations
  */
 export async function runMigrations(): Promise<void> {
@@ -66,6 +104,7 @@ export async function runMigrations(): Promise<void> {
 
   const migrations = loadMigrations();
   const applied = await getAppliedMigrations();
+  const isFreshDatabase = applied.size === 0;
 
   const pending = migrations.filter((m) => !applied.has(m.version));
 
@@ -106,6 +145,10 @@ export async function runMigrations(): Promise<void> {
   }
 
   console.log("=======All migrations completed successfully!\n=========");
+
+  if (isFreshDatabase) {
+    await seedDevelopmentData();
+  }
 }
 
 /**
@@ -143,6 +186,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         console.error(err);
         process.exit(1);
       });
+  } else if (command === "seed") {
+    seedDevelopmentData()
+      .then(() => process.exit(0))
+      .catch((err) => {
+        console.error(err);
+        process.exit(1);
+      });
   } else if (command === "rollback") {
     rollbackLastMigration()
       .then(() => process.exit(0))
@@ -151,7 +201,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         process.exit(1);
       });
   } else {
-    console.log("Usage: tsx migration-runner.ts [up|rollback]");
+    console.log("Usage: tsx migration-runner.ts [up|seed|rollback]");
     process.exit(1);
   }
 }
