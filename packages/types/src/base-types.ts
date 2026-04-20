@@ -148,6 +148,9 @@ export type TransactionUI = Omit<
 > & {
   created_at: string;
   metadata?: any;
+  merchant_balance?: string;
+  user_balance?: string;
+  user_status?: UserStatus;
 };
 export type TransactionBase = {
   short_code: string;
