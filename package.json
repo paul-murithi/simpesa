@@ -23,6 +23,7 @@
     "build": "tsc -b && npm run copy-sql --workspace=@app/db",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:ui\"",
     "db:migrate": "tsx packages/db/src/migration-runner.ts up",
+    "db:seed": "tsx packages/db/src/migration-runner.ts seed",
     "db:rollback": "tsx packages/db/src/migration-runner.ts rollback",
     "db:reset": "npm run db:rollback && npm run db:migrate",
     "test": "vitest run",

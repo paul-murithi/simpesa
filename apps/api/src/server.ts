@@ -10,14 +10,38 @@ import transactionsRoute from "./routes/transactions.route.js";
 
 const app = express();
 
+const defaultAllowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+];
+
+const allowedOrigins = (
+  process.env.CORS_ORIGINS?.split(",").map((origin) => origin.trim()) ??
+  defaultAllowedOrigins
+).filter(Boolean);
+
 app.get("/health", (req: Request, res: Response) => res.send("Server healthy"));
 
 // CORS middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept"],
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+    ],
     credentials: true,
   }),
 );
@@ -26,7 +50,7 @@ app.use(
 app.use(express.json());
 
 // Routes
-app.use("/api", testRouter);
+// app.use("/api", testRouter);
 app.use("/api/transactions", transactionsRoute);
 app.use("/stkpush", stkRoute);
 app.use("/oauth/v1", authRoute);

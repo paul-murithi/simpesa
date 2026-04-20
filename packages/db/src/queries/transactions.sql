@@ -39,13 +39,20 @@ SELECT
     t.result_code,
     t.created_at,
     t.metadata,
-    m.callback_url
+    m.callback_url,
+    m.balance AS merchant_balance,
+    u.balance AS user_balance,
+    u.status AS user_status
 FROM
     transactions t
 JOIN
     merchants m
 ON
     t.short_code = m.short_code
+JOIN
+    users u
+ON
+    t.phone_number = u.phone_number
 WHERE
     t.checkout_id = $1;
 
@@ -100,16 +107,27 @@ WHERE request_id = $1;
 
 -- name: listRecentTransactions
 SELECT
-    checkout_id,
-    external_reference,
-    short_code,
-    phone_number,
-    amount,
-    "status",
-    created_at,
-    metadata
+    t.checkout_id,
+    t.external_reference,
+    t.short_code,
+    t.phone_number,
+    t.amount,
+    t."status",
+    t.created_at,
+    t.metadata,
+    m.balance AS merchant_balance,
+    u.balance AS user_balance,
+    u.status AS user_status
 FROM
-    transactions
+    transactions t
+JOIN
+    merchants m
+ON
+    t.short_code = m.short_code
+JOIN
+    users u
+ON
+    t.phone_number = u.phone_number
 ORDER BY
-    created_at DESC
+    t.created_at DESC
 LIMIT $1;
