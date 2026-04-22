@@ -150,15 +150,27 @@ export class StkPushService {
     };
   }
 
-  buildApiPayload(
+  async buildApiPayload(
     request: ApiRequest,
     identifiers: ApiMetadataIdentifiers,
-  ): ApiTransactionMetadata {
+  ): Promise<ApiTransactionMetadata> {
     const metadata = {
       request: request,
       identifiers: identifiers,
     };
 
     return metadata;
+  }
+
+  async getTransactionByCheckoutId(checkout_id: string) {
+    return await this.repo.getTransactionByCheckoutId(checkout_id);
+  }
+
+  async getUserByMsisdn(msisdn: string) {
+    return await this.repo.findUserByPhoneNumber(msisdn);
+  }
+
+  async publishPinSignal(checkout_id: string, signal: string) {
+    await redisClient.publish(`pin:${checkout_id}`, signal);
   }
 }

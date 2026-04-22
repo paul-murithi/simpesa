@@ -12,11 +12,13 @@ import {
   type StkPushRequest,
   type StkPushResponse,
 } from "@app/types";
+import { NotFoundError } from "@app/utils";
+import { check } from "zod";
 
 const service = new StkPushService();
 const util = new TransactionUtils();
 
-export const StkPushController: RequestHandler<
+export const processRequest: RequestHandler<
   any,
   StkPushResponse,
   StkPushRequest
@@ -111,4 +113,69 @@ export const StkPushController: RequestHandler<
   }
 
   return res.status(200).json(acknowledgement);
+};
+
+export const verifyPin: RequestHandler = async (req, res) => {
+  const { checkout_id } = req.params;
+  const { pin } = req.body;
+
+  if (!checkout_id) {
+    logger.error("Transaction missing checkout_id");
+    return res.status(400).json({ ok: false, message: "Missing checkout_id" });
+  }
+
+  const child = logger.child({ checkout_id });
+
+  const txResponse = await service.getTransactionByCheckoutId(checkout_id);
+  const tx = txResponse.rows[0];
+
+  if (!tx) {
+    child.error("Transaction not found");
+    throw new NotFoundError("Transaction not found");
+  }
+
+  if (tx.status !== TRANSACTION_STATUS.PROCESSING) {
+    child.error(
+      `Transaction is in ${tx.status}, not in expected state PROCESSING.`,
+    );
+    return res.status(400).json({
+      ok: false,
+      message: `Transaction is in ${tx.status} state, not PROCESSING`,
+    });
+  }
+
+  const userResult = await service.getUserByMsisdn(tx.phone_number);
+  const user = userResult.rows[0];
+
+  if (!user) {
+    child.error("User not found");
+    throw new NotFoundError("User not found");
+  }
+
+  // compare submitted PIN to stored PIN
+  if (user.pin === pin) {
+    child.info("PIN submitted. Publishing pin signal");
+    await service.publishPinSignal(checkout_id, "CORRECT");
+  } else {
+    child.error("User submitted wrong PIN");
+    await service.publishPinSignal(checkout_id, "WRONG_PIN");
+  }
+
+  return res.status(200).json({ ok: true });
+};
+
+export const cancelTransaction: RequestHandler = async (req, res) => {
+  const { checkout_id } = req.params;
+
+  if (!checkout_id) {
+    logger.error("Missing checkout_id");
+    return res.status(400).json({ ok: false, message: "Missing checkout_id" });
+  }
+
+  const child = logger.child({ checkout_id });
+
+  child.info("Request cancelled. Publishing CANCELLED signal");
+  await service.publishPinSignal(checkout_id, "CANCELLED");
+
+  return res.status(200).json({ ok: true });
 };
