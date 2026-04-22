@@ -6,6 +6,7 @@ import { logger } from "@app/utils";
 export const createTransactionWorker = () => {
   const worker = new Worker("payment-tasks", transactionProcessor, {
     connection: redisConnection(),
+    lockDuration: 90000, // 90 seconds to cover PIN_TIMEOUT_MS
   });
 
   worker.on("completed", (job: Job) => {

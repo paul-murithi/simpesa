@@ -1,7 +1,12 @@
 import { TransactionRepository, Query, pool } from "@app/db";
 import type { CreateTransactionDTO } from "@app/types";
-import { UserStatus } from "@app/types";
-import { ConflictError, NotFoundError } from "@app/utils";
+import { TRANSACTION_STATUS, UserStatus } from "@app/types";
+import {
+  ConflictError,
+  logger,
+  NotFoundError,
+  PIN_TIMEOUT_MS,
+} from "@app/utils";
 import { createClient } from "redis";
 
 const repo = new TransactionRepository();
@@ -33,6 +38,41 @@ export class TransactionService {
     }
   }
 
+  private async waitForPin(
+    checkout_id: string,
+    timeoutMs: number,
+  ): Promise<string> {
+    const subscriber = createClient({
+      socket: { host: REDIS_HOST, port: REDIS_PORT },
+    });
+    await subscriber.connect();
+
+    return new Promise((resolve, reject) => {
+      const channel = `pin:${checkout_id}`;
+      let timeout: NodeJS.Timeout;
+
+      const cleanup = async () => {
+        clearTimeout(timeout);
+        try {
+          await subscriber.unsubscribe(channel);
+          await subscriber.quit();
+        } catch (err) {
+          logger.error({ err }, "Error during cleanup in waitForPin");
+        }
+      };
+
+      timeout = setTimeout(async () => {
+        await cleanup();
+        resolve("TIMEOUT");
+      }, timeoutMs);
+
+      subscriber.subscribe(channel, async (message) => {
+        await cleanup();
+        resolve(message);
+      });
+    });
+  }
+
   /**
    * Attempts to process a transaction in multiple phases:
    * Phase 1: Lock rows and validate balance
@@ -46,15 +86,50 @@ export class TransactionService {
 
     // Phase 1: Lock rows and validate balance
     await repo.lockRowsValidate(transactionalData);
+
+    // Start waiting for PIN BEFORE publishing status to UI
+    // to avoid race condition where UI sends PIN before worker is listening.
+    const pinPromise = this.waitForPin(checkout_id, PIN_TIMEOUT_MS);
+
     await this.publish(checkout_id);
 
-    // Keep PROCESSING visible long enough for dashboard SSE subscribers.
-    await wait(PROCESSING_VISIBILITY_DELAY_MS);
+    // Wait for PIN signal from Redis
+    const pinResult = await pinPromise;
 
-    // TODO: STK Push logic
+    switch (pinResult) {
+      case "CORRECT":
+        // Phase 2: Complete the transaction
+        await repo.finalizeTransaction(transactionalData);
+        break;
+      case "WRONG_PIN":
+        await repo.markTransactionFailed(
+          checkout_id,
+          TRANSACTION_STATUS.PROCESSING,
+          2001,
+        );
+        break;
+      case "CANCELLED":
+        await repo.markTransactionFailed(
+          checkout_id,
+          TRANSACTION_STATUS.PROCESSING,
+          1032,
+        );
+        break;
+      case "TIMEOUT":
+        await repo.markTransactionFailed(
+          checkout_id,
+          TRANSACTION_STATUS.PROCESSING,
+          1037,
+        );
+        break;
+      default:
+        await repo.markTransactionFailed(
+          checkout_id,
+          TRANSACTION_STATUS.PROCESSING,
+          1037,
+        );
+    }
 
-    // Phase 2: Complete the transaction
-    await repo.finalizeTransaction(transactionalData);
     await this.publish(checkout_id);
   }
 
