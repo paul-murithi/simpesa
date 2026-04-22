@@ -20,3 +20,10 @@ concurrency.ts
 
 // Typescrpt
 *.tsbuildinfo
+*.tsbuildinfo.*
+*.tscache
+*.tscache.*
+*.tsconfig.tsbuildinfo
+*.tsconfig.tsbuildinfo.*
+*.tsconfig.tscache
+*.tsconfig.tscache.*
