@@ -4,7 +4,7 @@ import { filterTransactions, upsertTransaction } from "../utils/dashboard";
 
 const normalizeBaseUrl = (baseUrl: string) => baseUrl.replace(/\/$/, "");
 
-const getApiUrl = (path: string) => {
+export const getApiUrl = (path: string) => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 
   if (!configuredBaseUrl) {
@@ -32,6 +32,7 @@ export const useDashboardTransactions = () => {
   const [hasEverConnected, setHasEverConnected] = useState<boolean>(false);
   const [lastUpdateAt, setLastUpdateAt] = useState<Date | null>(null);
   const [selectedTx, setSelectedTx] = useState<TransactionUI | null>(null);
+  const [pendingPinTx, setPendingPinTx] = useState<TransactionUI | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -67,6 +68,14 @@ export const useDashboardTransactions = () => {
             ? updatedTx
             : currentTx,
         );
+
+        if (updatedTx.status === "PROCESSING") {
+          setPendingPinTx(updatedTx);
+        } else {
+          setPendingPinTx((current) =>
+            current?.checkout_id === updatedTx.checkout_id ? null : current,
+          );
+        }
       } catch (error) {
         console.error("Failed to parse transaction update", error);
       }
@@ -77,8 +86,6 @@ export const useDashboardTransactions = () => {
       eventSource.close();
     };
   }, []);
-
-  console.log(transactions);
 
   const filteredTransactions = useMemo(
     () => filterTransactions(transactions, statusFilter, searchQuery),
@@ -97,5 +104,7 @@ export const useDashboardTransactions = () => {
     lastUpdateAt,
     selectedTx,
     setSelectedTx,
+    pendingPinTx,
+    setPendingPinTx,
   };
 };

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { useDashboardTransactions } from "./hooks/useDashboardTransactions";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { useDashboardTransactions, getApiUrl } from "./hooks/useDashboardTransactions";
 import {
   dashboardStatusOptions,
   formatTransactionAmount,
@@ -12,6 +12,128 @@ import "./Dashboard.css";
 const formatUpdateTime = (date: Date | null) => {
   if (!date) return "Waiting for updates";
   return date.toLocaleTimeString();
+};
+
+interface PinModalProps {
+  checkoutId: string;
+  amount: string;
+  onClose: () => void;
+}
+
+const PinModal: React.FC<PinModalProps> = ({ checkoutId, amount, onClose }) => {
+  const [pin, setPin] = useState(["", "", "", ""]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  useEffect(() => {
+    inputRefs[0]!.current?.focus();
+  }, []);
+
+  const handlePinChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newPin = [...pin];
+    newPin[index] = value.slice(-1);
+    setPin(newPin);
+
+    if (value && index < 3) {
+      inputRefs[index + 1]!.current?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !pin[index] && index > 0) {
+      inputRefs[index - 1]!.current?.focus();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const pinString = pin.join("");
+    if (pinString.length !== 4) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(getApiUrl(`/stkpush/pin/${checkoutId}`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pinString }),
+      });
+      if (response.ok) {
+        onClose();
+      } else {
+        console.error("Failed to submit PIN");
+      }
+    } catch (error) {
+      console.error("Error submitting PIN", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    setIsSubmitting(true);
+    try {
+      await fetch(getApiUrl(`/stkpush/cancel/${checkoutId}`), {
+        method: "POST",
+      });
+      onClose();
+    } catch (error) {
+      console.error("Error cancelling transaction", error);
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="pin-modal-overlay">
+      <div className="pin-modal">
+        <div className="pin-modal-header">
+          <h2>Enter PIN</h2>
+          <p>Confirm payment of KES {formatTransactionAmount(amount)}</p>
+        </div>
+        <form className="pin-form" onSubmit={handleSubmit}>
+          <div className="pin-input-group">
+            {pin.map((digit, index) => (
+              <input
+                key={index}
+                ref={inputRefs[index]}
+                type="password"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handlePinChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                className="pin-digit-input"
+                disabled={isSubmitting}
+              />
+            ))}
+          </div>
+          <div className="pin-modal-actions">
+            <button
+              type="submit"
+              className="btn-send"
+              disabled={pin.join("").length !== 4 || isSubmitting}
+            >
+              {isSubmitting ? "Processing..." : "Send"}
+            </button>
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 const Dashboard: React.FC = () => {
@@ -27,6 +149,8 @@ const Dashboard: React.FC = () => {
     lastUpdateAt,
     selectedTx,
     setSelectedTx,
+    pendingPinTx,
+    setPendingPinTx,
   } = useDashboardTransactions();
   const [autoApprove, setAutoApprove] = useState(true);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -73,6 +197,24 @@ const Dashboard: React.FC = () => {
       setCopiedKey(false);
     }
   };
+
+  useEffect(() => {
+    if (autoApprove && pendingPinTx) {
+      const submitAutoPin = async () => {
+        try {
+          await fetch(getApiUrl(`/stkpush/pin/${pendingPinTx.checkout_id}`), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin: "1234" }),
+          });
+          setPendingPinTx(null);
+        } catch (error) {
+          console.error("Auto-approve PIN failed", error);
+        }
+      };
+      submitAutoPin();
+    }
+  }, [autoApprove, pendingPinTx, setPendingPinTx]);
 
   return (
     <div className="dashboard-container">
@@ -329,6 +471,14 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {!autoApprove && pendingPinTx && (
+        <PinModal
+          checkoutId={pendingPinTx.checkout_id}
+          amount={pendingPinTx.amount}
+          onClose={() => setPendingPinTx(null)}
+        />
       )}
     </div>
   );
