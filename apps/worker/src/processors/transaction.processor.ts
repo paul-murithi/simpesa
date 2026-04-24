@@ -55,6 +55,22 @@ export const transactionProcessor = async (
 
     const { callback_url, payload } = await getBuiltPayload(result);
 
+    // Updated metadata with payload
+    const txResponse = await service.getTransactionByCheckoutId(checkout_id);
+    const tx = txResponse.rows[0];
+    if (tx) {
+      const currentMetadata = tx.metadata || {};
+      const updatedMetadata = JSON.stringify({
+        ...currentMetadata,
+        callback: {
+          ...(currentMetadata.callback || {}),
+          body: payload,
+        },
+      });
+      await service.updateTransactionMetadata(tx.request_id, updatedMetadata);
+      await service.publish(checkout_id);
+    }
+
     // Insert webhook dispatch
     const dispatchId = await createWebhookDispatch(
       result,
@@ -81,6 +97,22 @@ export const transactionProcessor = async (
       };
       const { callback_url, payload } = await getBuiltPayload(result);
 
+      // Update metadata with Payload
+      const txResponse = await service.getTransactionByCheckoutId(checkout_id);
+      const tx = txResponse.rows[0];
+      if (tx) {
+        const currentMetadata = tx.metadata || {};
+        const updatedMetadata = JSON.stringify({
+          ...currentMetadata,
+          callback: {
+            ...(currentMetadata.callback || {}),
+            body: payload,
+          },
+        });
+        await service.updateTransactionMetadata(tx.request_id, updatedMetadata);
+        await service.publish(checkout_id);
+      }
+
       /// Insert webhook dispatch
       const dispatchId = await createWebhookDispatch(
         result,
@@ -92,7 +124,6 @@ export const transactionProcessor = async (
       // Enqueue
       await addWebhookJob({ dispatchId: dispatchId, event: result.event });
       child.info("[Webhook Queue] Webhook Job successfully Queued");
-      await service.publish(checkout_id);
       return;
     }
 

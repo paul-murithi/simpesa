@@ -8,6 +8,7 @@ import {
   PIN_TIMEOUT_MS,
 } from "@app/utils";
 import { createClient } from "redis";
+import { publishTransactionUpdate } from "../lib/redisClient.js";
 
 const repo = new TransactionRepository();
 
@@ -16,10 +17,6 @@ const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379");
 const PROCESSING_VISIBILITY_DELAY_MS = parseInt(
   process.env.PROCESSING_VISIBILITY_DELAY_MS || "5000",
 );
-const redisPublisher = createClient({
-  socket: { host: REDIS_HOST, port: REDIS_PORT },
-});
-redisPublisher.connect().catch(console.error);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -28,10 +25,7 @@ export class TransactionService {
     try {
       const tx = await repo.getTransactionByCheckoutId(checkout_id);
       if (tx && tx.rows && tx.rows[0]) {
-        await redisPublisher.publish(
-          "transactions:updates",
-          JSON.stringify(tx.rows[0]),
-        );
+        await publishTransactionUpdate(tx.rows[0]);
       }
     } catch (error) {
       console.error("Failed to publish transaction update", error);
@@ -145,5 +139,13 @@ export class TransactionService {
     }
 
     return { user: user.rows[0], merchant: merchant.rows[0] };
+  }
+
+  async getTransactionByCheckoutId(checkout_id: string) {
+    return await repo.getTransactionByCheckoutId(checkout_id);
+  }
+
+  async updateTransactionMetadata(request_id: string, metadata: string) {
+    return await repo.updateTransactionMetadata(request_id, metadata);
   }
 }

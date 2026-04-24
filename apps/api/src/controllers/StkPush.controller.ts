@@ -13,7 +13,6 @@ import {
   type StkPushResponse,
 } from "@app/types";
 import { NotFoundError } from "@app/utils";
-import { check } from "zod";
 
 const service = new StkPushService();
 const util = new TransactionUtils();

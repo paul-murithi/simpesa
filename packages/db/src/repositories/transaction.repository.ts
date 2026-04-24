@@ -59,6 +59,7 @@ export class TransactionRepository {
     );
     const status = statusResult.rows[0]?.status;
     const currentMetadata = statusResult.rows[0]?.metadata || {};
+    logger.info({ currentMetadata }, "[Phase 1 Metadata]");
 
     if (status === SUCCESS || status === FAILED) {
       child.error(
@@ -131,6 +132,7 @@ export class TransactionRepository {
           status: "PROCESSING",
         },
       });
+      logger.info({ processingMetadata }, "[Phase 1 end Metadata]");
       await client.query(transactionQueries.markTransactionProcessing, [
         PROCESSING,
         checkout_id,
@@ -208,6 +210,7 @@ export class TransactionRepository {
       );
       const status = txResult.rows[0]?.status;
       currentMetadata = txResult.rows[0]?.metadata || {};
+      logger.info({ currentMetadata }, "[Phase 2 Metadata]");
 
       if (!status) {
         child.error("No transaction found for provided checkout id");
@@ -440,6 +443,12 @@ export class TransactionRepository {
       transactionQueries.GetTransactionWithCallbackByCheckoutID,
       [checkout_id],
     );
+  }
+
+  async getTransactionByRequestId(request_id: string) {
+    return await Query(transactionQueries.getTransactionByRequestId, [
+      request_id,
+    ]);
   }
 
   async fetchWebhookDispatch(

@@ -18,5 +18,6 @@ interface transactionQueries {
   getTransactionStatusByCheckoutId: string;
   hasActiveTransactionForUser: string;
   updateTransactionMetadata: string;
+  getTransactionByRequestId: string;
   listRecentTransactions: string;
 }

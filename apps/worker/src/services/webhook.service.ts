@@ -9,6 +9,7 @@ import type {
 import { logger, payloadBuilder, getCallbackUrl } from "@app/utils";
 import { TransactionRepository } from "@app/db";
 import axios from "axios";
+import { publishTransactionUpdate } from "../lib/redisClient.js";
 
 const repo = new TransactionRepository();
 
@@ -79,8 +80,15 @@ export class WebhookService {
   async logWebhookAttempt(data: WebHookAttempt, transaction_id?: string) {
     await repo.insertWebHookAttempt(data);
     if (transaction_id) {
+      // Fetch current metadata
+      const txResponse = await repo.getTransactionByRequestId(transaction_id);
+      const tx = txResponse.rows[0];
+      const currentMetadata = tx?.metadata || {};
+
       const metadata = JSON.stringify({
+        ...currentMetadata,
         callback: {
+          ...(currentMetadata.callback || {}),
           lastAttemptAt: new Date().toISOString(),
           attempts: data.attempt_number,
           lastResponse: {
@@ -91,6 +99,15 @@ export class WebhookService {
         },
       });
       await repo.updateTransactionMetadata(transaction_id, metadata);
+
+      if (tx) {
+        // Get the updated metadata
+        const updatedTxResponse =
+          await repo.getTransactionByRequestId(transaction_id);
+        if (updatedTxResponse.rows[0]) {
+          await publishTransactionUpdate(updatedTxResponse.rows[0]);
+        }
+      }
     }
   }
 

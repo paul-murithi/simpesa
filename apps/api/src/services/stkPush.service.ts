@@ -149,10 +149,10 @@ export class StkPushService {
     };
   }
 
-  async buildApiPayload(
+  buildApiPayload(
     request: ApiRequest,
     identifiers: ApiMetadataIdentifiers,
-  ): Promise<ApiTransactionMetadata> {
+  ): ApiTransactionMetadata {
     const metadata = {
       request: request,
       identifiers: identifiers,

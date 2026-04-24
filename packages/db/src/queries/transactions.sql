@@ -105,6 +105,36 @@ UPDATE transactions
 SET metadata = metadata || $2::jsonb
 WHERE request_id = $1;
 
+-- name: getTransactionByRequestId
+SELECT
+    t.checkout_id,
+    t.request_id,
+    t.external_reference,
+    t.short_code,
+    t.merchant_request_id,
+    t.phone_number,
+    t.amount,
+    t.status,
+    t.result_code,
+    t.created_at,
+    t.metadata,
+    m.callback_url,
+    m.balance AS merchant_balance,
+    u.balance AS user_balance,
+    u.status AS user_status
+FROM
+    transactions t
+JOIN
+    merchants m
+ON
+    t.short_code = m.short_code
+JOIN
+    users u
+ON
+    t.phone_number = u.phone_number
+WHERE
+    t.request_id = $1;
+
 -- name: listRecentTransactions
 SELECT
     t.checkout_id,
