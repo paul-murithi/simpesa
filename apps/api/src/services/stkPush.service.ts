@@ -1,4 +1,3 @@
-import type { Request } from "express";
 import { TransactionUtils } from "../utils/transaction.utils.js";
 import { redisClient, publishTransactionUpdate } from "../lib/redisClient.js";
 import { randomUUID } from "crypto";
@@ -6,11 +5,9 @@ import { addPaymentJob } from "@app/queue";
 import {
   ExternalServiceError,
   NotFoundError,
-  UnauthorizedError,
   ValidationError,
 } from "@app/utils";
 import {
-  TRANSACTION_STATUS,
   type ApiMetadataIdentifiers,
   type ApiRequest,
   type ApiTransactionMetadata,
@@ -48,7 +45,9 @@ export class StkPushService {
       );
 
       // Publish the initial status
-      const tx = await this.repo.getTransactionByCheckoutId(transaction.checkout_id);
+      const tx = await this.repo.getTransactionByCheckoutId(
+        transaction.checkout_id,
+      );
       if (tx.rows[0]) {
         await publishTransactionUpdate(tx.rows[0]);
       }
