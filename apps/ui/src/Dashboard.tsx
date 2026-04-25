@@ -2,7 +2,8 @@ import { useState } from "react";
 import LiveFeedPanel from "./components/dashboard/LiveFeedPanel";
 import PinModal from "./components/dashboard/PinModal";
 import Sidebar from "./components/dashboard/Sidebar";
-import StatsGrid from "./components/dashboard/StatsGrid";
+import CompactStatusBar from "./components/dashboard/StatsGrid";
+import StkPushForm from "./components/dashboard/StkPushForm";
 import TopBar from "./components/dashboard/TopBar";
 import TransactionDrawer from "./components/dashboard/TransactionDrawer";
 import { useAutoApprovePin } from "./hooks/useAutoApprovePin";
@@ -67,13 +68,13 @@ const Dashboard = () => {
       />
 
       <main className="dashboard-main">
-        <StatsGrid
-          totalToday={totalToday}
-          successRate={successRate}
-          successToday={successToday}
-          failedToday={failedToday}
-          lastUpdateAt={lastUpdateAt}
-        />
+        <div className="dashboard-header-row">
+          <CompactStatusBar
+            totalToday={totalToday}
+            lastUpdateAt={lastUpdateAt}
+          />
+          <StkPushForm />
+        </div>
 
         <LiveFeedPanel
           isConnected={isConnected}
