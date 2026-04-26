@@ -10,7 +10,9 @@ import { useAutoApprovePin } from "./hooks/useAutoApprovePin";
 import { useClipboardCopy } from "./hooks/useClipboardCopy";
 import { useDashboardDerivedMetrics } from "./hooks/useDashboardDerivedMetrics";
 import { useDashboardTransactions } from "./hooks/useDashboardTransactions";
+import { useAuth } from "./hooks/useAuth";
 import "./Dashboard.css";
+
 const Dashboard = () => {
   const {
     transactions,
@@ -28,10 +30,11 @@ const Dashboard = () => {
     setPendingPinTx,
   } = useDashboardTransactions();
 
+  const { token, refreshToken } = useAuth();
   const [autoApprove, setAutoApprove] = useState(true);
   const { copied: copiedKey, copy } = useClipboardCopy();
 
-  const apiKeyPreview = "Bearer ey...xK9f";
+  const apiKeyPreview = token ? `Bearer ${token}` : "Generating token...";
 
   const {
     totalToday,
@@ -73,7 +76,7 @@ const Dashboard = () => {
             totalToday={totalToday}
             lastUpdateAt={lastUpdateAt}
           />
-          <StkPushForm />
+          <StkPushForm authToken={token} onAuthError={refreshToken} />
         </div>
 
         <LiveFeedPanel

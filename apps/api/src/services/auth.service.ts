@@ -55,6 +55,10 @@ export class AuthService {
     return passkey === dbPasskey;
   }
 
+  async getMerchantToken(merchantId: string): Promise<string | null> {
+    return await redisClient.get(`auth:merchant:${merchantId}`);
+  }
+
   async saveTokenToRedis(token: string, merchantId: string) {
     const script = `
     local ttl = ARGV[3]
@@ -77,11 +81,7 @@ export class AuthService {
 
     const result = await redisClient.eval(script, {
       keys: [tokenKey, merchantKey],
-      arguments: [
-        token,
-        merchantId,
-        "3600", // TODO: 80 for testing
-      ],
+      arguments: [token, merchantId, "3600"],
     });
 
     if (!Array.isArray(result) || !result.every((r) => r === "OK")) {

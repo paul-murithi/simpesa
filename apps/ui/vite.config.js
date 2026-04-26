@@ -11,6 +11,14 @@ export default defineConfig({
         target: "http://localhost:3000",
         changeOrigin: true,
       },
+      "/stkpush": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/oauth": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
       "/health": {
         target: "http://localhost:3000",
         changeOrigin: true,

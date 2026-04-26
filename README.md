@@ -84,12 +84,12 @@ Sim-Pesa eliminates these frustrations by providing a **hermetic, zero-latency e
 
    ```bash
    curl -X POST http://localhost:8080/stkpush/v1/processrequest \
-     -H "Authorization: Bearer simulated-token" \
+     -H "Authorization: Bearer <PASTE_TOKEN_FROM_DASHBOARD>" \
      -H "Content-Type: application/json" \
      -d '{
        "BusinessShortCode": "174379",
        "Amount": 100,
-       "PhoneNumber": "254700000000",
+       "PhoneNumber": "254712345678",
        "AccountReference": "TestOrder123",
        "TransactionDesc": "Payment for goods"
      }'
@@ -432,7 +432,7 @@ API Request → Queue → Worker → Database → Webhook
 
 ## Current Status
 
-**Week 11 of 16** - Asynchronous Queuing and Webhooks Phase
+**Week 15 of 16** - Asynchronous Queuing and Webhooks Phase
 
 Completed:
 

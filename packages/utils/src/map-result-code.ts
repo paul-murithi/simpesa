@@ -20,6 +20,7 @@ const RESULT_DESCRIPTIONS: Record<number, string> = {
   1019: "Transaction expired in the queue",
   1032: "Request cancelled by user",
   1037: "DS Timeout",
+  2001: "The initiator information is invalid",
   9999: "Request processing failed. Please try again later.",
 };
 
@@ -45,6 +46,7 @@ export const RESULT_CODES = {
   TRANSACTION_EXPIRED: 1019,
   CANCELLED_BY_USER: 1032,
   DS_TIMEOUT: 1037,
+  INVALID_PIN: 2001,
   GENERAL_ERROR: 9999,
 } as const;
 

@@ -36,7 +36,11 @@ const TopBar = ({
         </label>
 
         <div className="api-key-preview">
-          <span>{apiKeyPreview}</span>
+          <span title={apiKeyPreview}>
+            {apiKeyPreview.length > 20
+              ? `${apiKeyPreview.slice(0, 10)}...${apiKeyPreview.slice(-4)}`
+              : apiKeyPreview}
+          </span>
           <button type="button" onClick={onCopyApiKey}>
             {copiedKey ? "Copied" : "Copy"}
           </button>

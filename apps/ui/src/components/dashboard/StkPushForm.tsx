@@ -8,7 +8,12 @@ interface StkPushResponse {
   ResponseDescription: string;
 }
 
-const StkPushForm = () => {
+interface StkPushFormProps {
+  authToken: string | null;
+  onAuthError?: () => void;
+}
+
+const StkPushForm = ({ authToken, onAuthError }: StkPushFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("254712345678");
   const [amount, setAmount] = useState("10");
@@ -16,8 +21,6 @@ const StkPushForm = () => {
   const [isSending, setIsSending] = useState(false);
   const [response, setResponse] = useState<StkPushResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const AUTH_TOKEN = "NGE0YzdkZDYtYzI2ZC00ODJkLWEzYjEtNjNiN2I3YTkyMDNm"; // TODO: Add actual logic
 
   const resetForm = () => {
     setPhoneNumber("254712345678");
@@ -43,6 +46,12 @@ const StkPushForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!authToken) {
+      setError("Authorization token not available yet. Please wait.");
+      return;
+    }
+
     setIsSending(true);
     setError(null);
     setResponse(null);
@@ -51,7 +60,7 @@ const StkPushForm = () => {
       const res = await fetch(getApiUrl("/stkpush/v1/processrequest"), {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${AUTH_TOKEN}`,
+          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -63,6 +72,14 @@ const StkPushForm = () => {
       });
 
       const data = await res.json();
+
+      if (res.status === 401) {
+        onAuthError?.();
+        setError(
+          "Session expired. Automatically refreshing token... Please try again.",
+        );
+        return;
+      }
 
       if (res.ok) {
         setResponse(data);

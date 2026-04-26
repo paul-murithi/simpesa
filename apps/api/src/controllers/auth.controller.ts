@@ -26,9 +26,12 @@ export async function authController(
     throw new UnauthorizedError("The passkey is invalid/incorrect");
   }
 
-  const token = utils.generateAuthToken(merchant.id);
+  let token = await service.getMerchantToken(merchant.id);
 
-  await service.saveTokenToRedis(token, merchant.id);
+  if (!token) {
+    token = utils.generateAuthToken(merchant.id);
+    await service.saveTokenToRedis(token, merchant.id);
+  }
 
   return res.status(200).json({ token: token });
 }

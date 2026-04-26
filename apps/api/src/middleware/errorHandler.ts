@@ -10,15 +10,17 @@ export function errorHandler(
   if (err instanceof NotFoundError) {
     return res.status(404).json({ message: err.message });
   }
+
+  if (err instanceof UnauthorizedError) {
+    return res.status(401).json({
+      message: "User unauthorized",
+    });
+  }
+
   if (err instanceof BaseError) {
     return res.status(err.statusCode).json({
       message: err.message,
       developerHint: err.developerHint,
-    });
-  }
-  if (err instanceof UnauthorizedError) {
-    return res.status(401).json({
-      message: "User unauthorized",
     });
   }
 
