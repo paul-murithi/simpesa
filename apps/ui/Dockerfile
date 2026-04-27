@@ -2,18 +2,20 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy root package files
+# Copy root monorepo configuration
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 
+# Copy all workspaces
+COPY apps ./apps
+COPY packages ./packages
 
+# Install dependencies
 RUN npm install
 
-# Copy UI source code
-COPY apps/ui ./apps/ui
-
-# Build the UI. output is /app/apps/ui/dist
-RUN npm run build:ui
+# Build the UI workspace
+WORKDIR /app/apps/ui
+RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
