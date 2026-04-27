@@ -11,9 +11,13 @@ async function startServer() {
   try {
     await connectRedis();
 
+    const authService = new AuthService();
+
+    // Check first run
+    await authService.checkFirstRun();
+
     // Pregenerate a token for the default merchant
     try {
-      const authService = new AuthService();
       const authUtils = new AuthUtils();
       const merchant = await authService.getMerchant("174379");
       if (merchant) {

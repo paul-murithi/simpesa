@@ -12,6 +12,43 @@ const repo = new AuthRepository();
 const utils = new AuthUtils();
 
 export class AuthService {
+  private static isFirstRun = true;
+
+  static async setFirstRunStatus(status: boolean) {
+    this.isFirstRun = status;
+  }
+
+  static getFirstRunStatus() {
+    return this.isFirstRun;
+  }
+
+  async checkFirstRun(): Promise<boolean> {
+    const count = await repo.countMerchants();
+    AuthService.setFirstRunStatus(count === 0);
+    return AuthService.getFirstRunStatus();
+  }
+
+  async registerMerchant(data: { shortCode: string; callbackUrl: string }) {
+    const passKey =
+      "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
+
+    await repo.createMerchant({
+      short_code: data.shortCode,
+      pass_key: passKey,
+      callback_url: data.callbackUrl,
+      balance: 1000000,
+    });
+
+    await repo.createUser({
+      phone_number: "254700000000",
+      pin: "1234",
+      balance: 10000.0,
+      status: "ACTIVE",
+    });
+
+    AuthService.setFirstRunStatus(false);
+  }
+
   async getMerchantFromToken(token: string) {
     if (!token) return null;
     return await redisClient.get(`auth:token:${token.trim()}`);
