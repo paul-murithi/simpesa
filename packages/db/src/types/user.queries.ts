@@ -5,11 +5,8 @@ export const userQueries = loadQueries<UserQueries>("users.sql");
 
 interface UserQueries {
   [key: string]: string;
-  GetUserById: string;
-  CreateUser: string;
-  DeleteUser: string;
+  createUser: string;
   lockUserByPhoneNumber: string;
   debitUser: string;
   findUserByPhoneNumber: string;
-  findUserByStatus: string;
 }
