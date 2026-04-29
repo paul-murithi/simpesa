@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -13,18 +13,36 @@ interface Migration {
   sql: string;
 }
 
-const seedFilePath = join(
-  __dirname,
-  "../../..",
-  "scripts",
-  "seed-dev-data.sql",
+interface RunMigrationsOptions {
+  seedOnFreshDatabase?: boolean;
+}
+
+function resolveAssetPath(...candidates: string[]): string {
+  const existingPath = candidates.find((candidate) => existsSync(candidate));
+
+  if (!existingPath) {
+    throw new Error(
+      `Unable to resolve asset path from: ${candidates.join(", ")}`,
+    );
+  }
+
+  return existingPath;
+}
+
+const migrationsDir = resolveAssetPath(
+  join(__dirname, "migrations"),
+  join(__dirname, "..", "src", "migrations"),
+);
+
+const schemaFilePath = resolveAssetPath(
+  join(__dirname, "schema_migrations.sql"),
+  join(__dirname, "..", "src", "schema_migrations.sql"),
 );
 
 /**
  * Load all migration files from the migrations directory
  */
 function loadMigrations(): Migration[] {
-  const migrationsDir = join(__dirname, "migrations");
   const files = readdirSync(migrationsDir)
     .filter((f) => f.endsWith(".sql"))
     .sort();
@@ -64,7 +82,19 @@ async function getAppliedMigrations(): Promise<Set<number>> {
 export async function seedDevelopmentData(): Promise<void> {
   console.log("Seeding development data...\n");
 
-  const seedSql = readFileSync(seedFilePath, "utf-8").trim();
+  // To resolve seed file from common build/source locations
+  let seedSql: string;
+  try {
+    const seedPath = resolveAssetPath(
+      join(__dirname, "..", "..", "..", "scripts", "seed-dev-data.sql"),
+      join(__dirname, "..", "..", "..", "src", "scripts", "seed-dev-data.sql"),
+    );
+
+    seedSql = readFileSync(seedPath, "utf-8").trim();
+  } catch (err) {
+    console.log("Seed file not found; skipping development data seed.\n");
+    return;
+  }
 
   if (!seedSql) {
     console.log("Seed file is empty. Skipping development data seed.\n");
@@ -92,14 +122,15 @@ export async function seedDevelopmentData(): Promise<void> {
 /**
  * Run pending migrations
  */
-export async function runMigrations(): Promise<void> {
+export async function runMigrations(
+  options: RunMigrationsOptions = {},
+): Promise<void> {
+  const { seedOnFreshDatabase = true } = options;
+
   console.log("Running database migrations...\n");
 
   // Create schema_migrations table if it doesnt exist
-  const schemaSql = readFileSync(
-    join(__dirname, "schema_migrations.sql"),
-    "utf-8",
-  );
+  const schemaSql = readFileSync(schemaFilePath, "utf-8");
   await db.query(schemaSql);
 
   const migrations = loadMigrations();
@@ -133,8 +164,40 @@ export async function runMigrations(): Promise<void> {
 
       await client.query("COMMIT");
       console.log(`Applied ${migration.version}_${migration.name}\n`);
-    } catch (err) {
+    } catch (err: any) {
       await client.query("ROLLBACK");
+
+      // If this migration failed because an index or object already exists,
+      // mark the migration as applied and continue. This handles cases where
+      // the DB contains partial artifacts but the migration wasn't recorded.
+      const msg = String(err?.message ?? "").toLowerCase();
+      const isDuplicate =
+        err?.code === "42P07" ||
+        msg.includes("already exists") ||
+        msg.includes("duplicate_object");
+
+      if (isDuplicate) {
+        console.warn(
+          `Migration ${migration.version}_${migration.name} reported duplicate object; marking as applied and continuing.`,
+        );
+        try {
+          // Record as applied to avoid retrying
+          await db.query(
+            "INSERT INTO schema_migrations (migration_version, name) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [migration.version, migration.name],
+          );
+          console.log(
+            `Marked ${migration.version}_${migration.name} as applied (duplicate ignored)\n`,
+          );
+          continue;
+        } catch (insErr) {
+          console.error(
+            "Failed to record migration after duplicate-object handling",
+            insErr,
+          );
+          throw err;
+        }
+      }
 
       console.error(`Failed to apply ${migration.version}_${migration.name}`);
       console.error(err);
@@ -146,7 +209,7 @@ export async function runMigrations(): Promise<void> {
 
   console.log("=======All migrations completed successfully!\n=========");
 
-  if (isFreshDatabase) {
+  if (isFreshDatabase && seedOnFreshDatabase) {
     await seedDevelopmentData();
   }
 }

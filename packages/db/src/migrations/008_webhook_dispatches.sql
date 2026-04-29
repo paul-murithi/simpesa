@@ -19,5 +19,5 @@ CREATE TABLE IF NOT EXISTS webhook_dispatches (
     ON DELETE CASCADE
 );
 
-CREATE INDEX idx_webhook_dispatch_transaction
+CREATE INDEX IF NOT EXISTS idx_webhook_dispatch_transaction
 ON webhook_dispatches(transaction_id)
