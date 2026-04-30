@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import "../Onboarding.css";
 import "../Dashboard.css"; // Reuse dashboard variables
 
-const OnboardingPage = () => {
+interface OnboardingPageProps {
+  onComplete: () => void;
+}
+
+const OnboardingPage = ({ onComplete }: OnboardingPageProps) => {
   const [shortCode, setShortCode] = useState("");
   const [callbackUrl, setCallbackUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,6 +36,7 @@ const OnboardingPage = () => {
       const data = await response.json();
       if (data.success) {
         // Registration successful, the API has flipped the isFirstRun flag
+        onComplete();
         navigate("/dashboard");
       } else {
         setError("Failed to complete onboarding");

@@ -49,7 +49,11 @@ function App() {
       <Route
         path="/onboarding"
         element={
-          status.firstRun ? <OnboardingPage /> : <Navigate to="/dashboard" replace />
+          status.firstRun ? (
+            <OnboardingPage onComplete={() => setStatus({ ...status, firstRun: false })} />
+          ) : (
+            <Navigate to="/dashboard" replace />
+          )
         }
       />
       <Route

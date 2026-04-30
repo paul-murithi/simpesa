@@ -53,11 +53,11 @@ app.use(express.json());
 
 // Routes
 // app.use("/api", testRouter);
+app.use("/oauth/v1", authRoute);
 app.use("/api/transactions", transactionsRoute);
 app.use("/api/v1/status", statusRoute);
 app.use("/api/v1/onboarding", onboardingRoute);
 app.use("/stkpush", stkRoute);
-app.use("/oauth/v1", authRoute);
 
 // Callback mock route
 app.post("/callback", (req, res) => {

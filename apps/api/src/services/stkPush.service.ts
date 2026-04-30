@@ -55,7 +55,13 @@ export class StkPushService {
       return request_id;
     } catch (error: any) {
       if (error.code === "23503") {
-        throw new NotFoundError("Merchant does not exist");
+        if (error.detail?.includes("short_code")) {
+          throw new NotFoundError("Merchant with the provided short code does not exist");
+        }
+        if (error.detail?.includes("phone_number")) {
+          throw new NotFoundError("User with the provided phone number does not exist");
+        }
+        throw new NotFoundError("Merchant or User does not exist");
       }
       throw error;
     }

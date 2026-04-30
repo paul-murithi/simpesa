@@ -6,7 +6,7 @@ const AUTH_GENERATE_URL = getApiUrl("/oauth/v1/generate");
 // Default dev credentials from seed-dev-data.sql
 const DEFAULT_CREDENTIALS = {
   short_code: "174379",
-  passkey: "pass_key123",
+  passkey: "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
 };
 
 export const useAuth = () => {

@@ -39,12 +39,19 @@ export class AuthService {
       balance: 1000000,
     });
 
-    await repo.createUser({
-      phone_number: "254700000000",
-      pin: "1234",
-      balance: 10000.0,
-      status: "ACTIVE",
-    });
+    try {
+      await repo.createUser({
+        phone_number: "254700000000",
+        pin: "1234",
+        balance: 10000.0,
+        status: "ACTIVE",
+      });
+    } catch (userError: any) {
+      // Ignore if user already exists
+      if (userError.code !== "23505") {
+        throw userError;
+      }
+    }
 
     AuthService.setFirstRunStatus(false);
   }
