@@ -16,7 +16,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/">
+            to="/docs">
             Get Started - 5min ⏱️
           </Link>
         </div>
@@ -25,21 +25,64 @@ function HomepageHeader() {
   );
 }
 
+const FeatureList = [
+  {
+    title: 'Local-First',
+    description: (
+      <>
+        Run the entire M-Pesa stack on your machine. No more relying on the 
+        unstable Daraja sandbox.
+      </>
+    ),
+  },
+  {
+    title: 'Real-Time Dashboard',
+    description: (
+      <>
+        Monitor transactions as they happen. Use the virtual smartphone to 
+        simulate PIN entries and cancellations.
+      </>
+    ),
+  },
+  {
+    title: 'Reliable Webhooks',
+    description: (
+      <>
+        Built-in retry logic with exponential backoff ensures your callbacks 
+        are delivered even if your system is briefly offline.
+      </>
+    ),
+  },
+];
+
+function Feature({title, description}) {
+  return (
+    <div className={clsx('col col--4')}>
+      <div className="text--center padding-horiz--md">
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Local-first M-Pesa API Simulator Documentation">
+      title={`${siteConfig.title} - M-Pesa Simulator`}
+      description="Production-grade local M-Pesa API simulator documentation.">
       <HomepageHeader />
       <main>
-        <div className="container" style={{padding: '2rem 0', textAlign: 'center'}}>
-          <h2>Why Sim-Pesa?</h2>
-          <p>
-            Stop fighting with the Daraja Sandbox. Test your M-Pesa integrations locally, 
-            reliably, and for free.
-          </p>
-        </div>
+        <section className={styles.features}>
+          <div className="container">
+            <div className="row">
+              {FeatureList.map((props, idx) => (
+                <Feature key={idx} {...props} />
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
     </Layout>
   );

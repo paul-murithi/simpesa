@@ -1,7 +1,6 @@
 ---
 title: Welcome to Sim-Pesa
 sidebar_position: 1
-slug: /
 ---
 
 # Sim-Pesa
@@ -83,10 +82,11 @@ Send a POST request to `http://localhost:3000/stkpush/v1/processrequest`.
 3. Use the **Virtual Smartphone** component to enter the PIN (Default: `1234`).
 4. Click **Submit**.
 
-**Pro Tip: Auto-Approve PIN**
+:::tip Pro Tip: Auto-Approve PIN
 In the Dashboard UI, you can toggle the **Auto-Approve** feature. When enabled, the system will automatically submit the default PIN (`1234`) for any incoming STK Push request.
+:::
 
 ## 7. Troubleshooting
-- **Port 5432/6379 Busy:** Ensure no local Postgres or Redis instances are running.
-- **Worker Not Processing:** Check Redis connection logs in `docker compose logs worker`.
-- **Database Not Initialized:** Check `docker compose logs db` for migration errors.
+:::warning Port Conflicts
+Ensure ports **5432** (Postgres) and **6379** (Redis) are not being used by other local services before running `docker compose up`.
+:::

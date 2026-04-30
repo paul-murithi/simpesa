@@ -4,7 +4,7 @@
 const config = {
   title: 'Sim-Pesa',
   tagline: 'Local-first M-Pesa API Simulator',
-  favicon: 'img/favicon.ico',
+  // favicon: 'img/favicon.ico', // Disabled until asset is provided
 
   url: 'https://simpesa-docs.vercel.app',
   baseUrl: '/',
@@ -27,7 +27,8 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          routeBasePath: '/', // Serve the docs at the site's root
+          // The default is 'docs', keeping it isolated from the landing page
+          routeBasePath: 'docs', 
         },
         blog: false,
         theme: {
