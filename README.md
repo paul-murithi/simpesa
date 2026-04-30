@@ -1,499 +1,155 @@
-# Sim-Pesa: Local-First M-Pesa API Simulator
+# Sim-Pesa
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+Sim-Pesa is a production-grade, local-first M-Pesa API simulator. It provides a robust environment for testing STK Push (Lipa na M-Pesa Online) integrations without the instability or costs associated with the Safaricom Daraja sandbox.
 
-> **A production-grade, containerized M-Pesa Daraja API simulator that runs entirely on localhost—because your development shouldn't depend on Safaricom's uptime.**
+## 1. Overview
+Sim-Pesa simulates the entire lifecycle of an STK Push transaction. It includes an ingestion API that mimics Daraja's endpoints, a background worker for asynchronous processing, and a React-based dashboard for real-time monitoring and manual PIN approval.
 
-## The Problem
+**Key Features:**
+- **Local-first:** Run the entire stack on your machine via Docker.
+- **Queue-based Architecture:** Uses BullMQ (Redis) for reliable transaction and webhook processing.
+- **Virtual Smartphone UI:** A dedicated interface to simulate user interaction (PIN entry/cancellation).
+- **Webhook Callbacks:** Reliable callback system with exponential backoff retries.
+- **Persistence:** PostgreSQL storage for merchants, users, and transaction history.
 
-If you've ever integrated with M-Pesa's Daraja API, you know the pain:
+## 2. Architecture Overview
+Sim-Pesa follows a microservices-inspired architecture:
 
-- **Error 1037 (DS Timeout)** halting your integration for days
-- **Error 1001 (Subscriber Locked)** disrupting your testing flow
-- **Error 9999 (General Error)** appearing at the worst possible moments
-- Sandbox downtime derailing product launches
+- **API (Ingestion):** Handles incoming STK Push requests, authentication, and transaction initiation.
+- **Worker:** Processes business logic (balance checks, state transitions) and waits for user interaction via Redis Pub/Sub.
+- **PostgreSQL:** Stores persistent data for merchants, users, and transactions.
+- **Redis:** Serves as the message broker for BullMQ and handles real-time signaling between the API and Worker.
+- **React Dashboard:** Provides a "God-view" of all transactions and a virtual smartphone interface for simulation.
 
-Sim-Pesa eliminates these frustrations by providing a **hermetic, zero-latency environment** that runs entirely on your machine.
+**Transaction Flow:**
+1. **Request:** Client sends an STK Push request to the API.
+2. **Queue:** API records a `PENDING` transaction and enqueues a job in BullMQ.
+3. **Wait:** Worker picks up the job, moves it to `PROCESSING`, and waits for a PIN signal.
+4. **Interact:** Developer uses the UI to enter a PIN or cancel the request.
+5. **Finalize:** Worker receives the signal, updates the DB (`SUCCESS`/`FAILED`), and enqueues a webhook.
+6. **Callback:** Webhook processor delivers the results to the merchant's configured URL.
 
-## Features
+## 3. Tech Stack
+- **Backend:** Node.js, Express, TypeScript
+- **Task Queue:** BullMQ, Redis
+- **Database:** PostgreSQL
+- **Frontend:** React, TypeScript, Vite
+- **Infrastructure:** Docker, Docker Compose
 
-### Local Appliance Architecture
-
-- **100% Offline**: No internet required after initial Docker image pull
-- **Zero Configuration**: First-run wizard handles all setup
-- **State Persistence**: Your merchants, users, and transactions survive restarts
-- **Instant Response**: Sub-100ms API acknowledgments
-
-### Production-Grade Integrity
-
-- **ACID Compliance**: PostgreSQL with row-level locking prevents race conditions
-- **Transactional State Machine**: Rigorous PENDING → PROCESSING → SUCCESS/FAILED lifecycle
-- **Idempotent Operations**: Duplicate requests handled safely with `ON CONFLICT` logic
-- **Atomic Balance Updates**: No double-spending, no lost updates
-
-### Developer Experience
-
-- **Virtual Smartphone UI**: Manually approve/reject STK Push requests with PIN entry
-- **Auto-Approve Mode**: Stress-test your integration with automated approvals
-- **Real-time Dashboard**: Monitor all transactions as they flow through the system
-- **Structured Logging**: Every request correlated by `TransactionID` for deep debugging
-
-### Full M-Pesa Simulation
-
-- STK Push (Lipa na M-Pesa Online)
-- Transaction status queries
-- Webhook callbacks with exponential backoff retry
-- Configurable error scenarios (insufficient funds, wrong PIN, cancelled transactions)
-
-## 🏁 Quick Start
+## 4. Getting Started
 
 ### Prerequisites
+- Docker
+- Docker Compose
 
-- [Docker](https://docs.docker.com/get-docker/) (v20.10+)
-- [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/paul-murithi/simpesa.git
-   cd simpesa
-   ```
-
-2. **Start the appliance**
-
+### Installation & Run
+1. Clone the repository.
+2. Start the services:
    ```bash
    docker compose up -d
    ```
+3. The system will be ready once the DB migrations complete automatically.
 
-3. **Access the dashboard**
+### Services & Ports
+| Service | External Port | Description |
+| :--- | :--- | :--- |
+| **API** | `3000` | Ingestion & Auth endpoints |
+| **UI** | `5173` | Dashboard & Virtual Phone |
+| **PostgreSQL** | `5432` | Main database |
+| **Redis** | `6379` | Queue & Signaling |
 
-   Open [http://localhost:3000](http://localhost:3000) in your browser
+## 5. First Run (Onboarding Flow)
+When you first launch Sim-Pesa, you need to register a Merchant to obtain credentials.
 
-4. **Complete first-run setup**
+1. Navigate to `http://localhost:5173/onboarding` (or use the API).
+2. Register your merchant `short_code` and `callback_url`.
+3. The system comes pre-seeded with a default test user (if `seed-dev-data.sql` is applied) or you can manage users via the DB.
 
-   The onboarding wizard will guide you through:
-   - Registering your first merchant (ShortCode)
-   - Setting your callback URL
-   - Creating a test user with 10,000 KES balance
+## 6. How to Simulate a Payment
 
-5. **Make your first STK Push**
+### Step 1: Trigger STK Push
+Send a POST request to `http://localhost:3000/stkpush/v1/processrequest`.
+(Requires an Authorization token from `/oauth/v1/generate`).
 
-   ```bash
-   curl -X POST http://localhost:8080/stkpush/v1/processrequest \
-     -H "Authorization: Bearer <PASTE_TOKEN_FROM_DASHBOARD>" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "BusinessShortCode": "174379",
-       "Amount": 100,
-       "PhoneNumber": "254712345678",
-       "AccountReference": "TestOrder123",
-       "TransactionDesc": "Payment for goods"
-     }'
-   ```
-
-6. **Approve the transaction**
-
-   Go to the Virtual Smartphone in the dashboard and enter PIN: `1234`
-
-## Architecture
-
-Sim-Pesa uses a multi-container architecture orchestrated by Docker Compose:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Your Application                      │
-│              (sends STK Push requests)                   │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │   Ingestion API       │  ← Fast HTTP endpoint
-         │   (Node.js/TypeScript)│     Returns 200 OK instantly
-         └──────────┬────────────┘
-                    │ Enqueues job
-                    ▼
-         ┌───────────────────────┐
-         │   Redis + BullMQ      │  ← Asynchronous queue
-         │   (Job Management)    │     Ensures delivery
-         └──────────┬────────────┘
-                    │ Worker picks up job
-                    ▼
-         ┌───────────────────────┐
-         │   Worker Pool         │  ← Transactional logic
-         │   (Node.js/TypeScript)│     Row-level locking
-         └──────────┬────────────┘
-                    │ Updates state
-                    ▼
-         ┌───────────────────────┐
-         │   PostgreSQL 16       │  ← Source of truth
-         │   (Persistent DB)     │     ACID compliance
-         └───────────────────────┘
-                    ▲
-                    │ Real-time updates
-         ┌──────────┴────────────┐
-         │   Simulation UI       │  ← Virtual Smartphone
-         │   (React + Tailwind)  │     Transaction monitoring
-         └───────────────────────┘
-```
-
-### Core Services
-
-| Service           | Technology        | Port | Purpose                           |
-| ----------------- | ----------------- | ---- | --------------------------------- |
-| **Ingestion API** | Node.js + Express | 8080 | Receives STK Push requests        |
-| **Worker Pool**   | Node.js + BullMQ  | -    | Processes payments asynchronously |
-| **Database**      | PostgreSQL 16     | 5432 | Persistent storage                |
-| **Cache/Queue**   | Redis 7           | 6379 | Message broker                    |
-| **Dashboard**     | React + Vite      | 3000 | Visual interface                  |
-
-## 🗄️ Database Schema
-
-### Merchants Table
-
-Stores business entities (Paybills/Till numbers)
-
-```sql
-- id (UUID, primary key)
-- short_code (VARCHAR, unique) -- e.g., "174379"
-- passkey (TEXT) -- For STK password generation
-- callback_url (TEXT) -- Where to send webhooks
-- balance (NUMERIC) -- Merchant's simulated funds
-- created_at (TIMESTAMP)
-```
-
-### Users Table
-
-Simulated M-Pesa subscribers
-
-```sql
-- phone_number (VARCHAR, primary key) -- e.g., "254712345678"
-- pin (VARCHAR) -- 4-digit PIN for approval
-- balance (NUMERIC, CHECK >= 0) -- User's wallet
-- status (VARCHAR) -- ACTIVE/BLOCKED
-```
-
-### Transactions Table
-
-Immutable audit log
-
-```sql
-- request_id (UUID, primary key)
-- checkout_id (VARCHAR, unique) -- Daraja CheckoutRequestID
-- short_code (VARCHAR, foreign key)
-- msisdn (VARCHAR, foreign key)
-- amount (NUMERIC)
-- status (VARCHAR) -- PENDING/PROCESSING/SUCCESS/FAILED
-- result_code (INTEGER) -- 0=Success, 1=Insufficient funds, etc.
-- metadata (JSONB) -- Full request/response for debugging
-```
-
-## Simulated Error Codes
-
-Test your error handling logic with realistic scenarios:
-
-| Code   | Description        | How to Trigger                         |
-| ------ | ------------------ | -------------------------------------- |
-| `0`    | Success            | Normal flow with correct PIN           |
-| `1`    | Insufficient Funds | Set user balance < transaction amount  |
-| `1032` | Cancelled by User  | Click "Cancel" on Virtual Smartphone   |
-| `2001` | Invalid PIN        | Enter wrong PIN in Virtual Smartphone  |
-| `1037` | DS Timeout         | Enable "Simulate Timeout" in dashboard |
-
-## Development
-
-### Project Structure
-
-```
-├── apps
-│   ├── api
-│   │   ├── Dockerfile
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   ├── controllers
-│   │   │   │   └── StkPush.controller.ts
-│   │   │   ├── index.ts
-│   │   │   ├── lib
-│   │   │   │   └── redisClient.ts
-│   │   │   ├── middleware
-│   │   │   │   ├── auth.ts
-│   │   │   │   ├── errorHandler.ts
-│   │   │   │   ├── timestamp.middleware.ts
-│   │   │   │   └── transaction.validation.ts
-│   │   │   ├── routes
-│   │   │   │   ├── stkpush.ts
-│   │   │   │   └── test.ts
-│   │   │   ├── server.ts
-│   │   │   ├── services
-│   │   │   │   └── stkPush.service.ts
-│   │   │   └── utils
-│   │   │       └── transaction.utils.ts
-│   │   ├── tsconfig.json
-│   │   └── tsconfig.tsbuildinfo
-│   ├── ui
-│   │   ├── Dockerfile
-│   │   ├── eslint.config.js
-│   │   ├── index.html
-│   │   ├── package.json
-│   │   ├── public
-│   │   │   └── vite.svg
-│   │   ├── src
-│   │   │   ├── App.css
-│   │   │   ├── App.tsx
-│   │   │   ├── assets
-│   │   │   │   └── react.svg
-│   │   │   ├── components
-│   │   │   ├── index.css
-│   │   │   └── main.tsx
-│   │   ├── tsconfig.app.json
-│   │   ├── tsconfig.json
-│   │   ├── tsconfig.node.json
-│   │   ├── vite.config.js
-│   │   └── vite.config.ts
-│   └── worker
-│       ├── Dockerfile
-│       ├── package.json
-│       ├── src
-│       │   ├── config
-│       │   │   └── redis.ts
-│       │   ├── index.ts
-│       │   ├── processors
-│       │   │   ├── transaction.processor.ts
-│       │   │   └── webhook.processor.ts
-│       │   ├── services
-│       │   │   ├── balance.service.ts
-│       │   │   ├── transaction.service.ts
-│       │   │   └── webhook.service.ts
-│       │   └── worker
-│       │       ├── transaction.worker.ts
-│       │       └── webhook.worker.ts
-│       ├── tsconfig.json
-│       └── tsconfig.tsbuildinfo
-├── docker-compose.dev.yml
-├── docker-compose.yml
-├── docs
-│   ├── api.md
-│   ├── architecture.md
-│   └── roadmap.md
-├── package.json
-├── package-lock.json
-├── packages
-│   ├── db
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   ├── client.ts
-│   │   │   ├── index.ts
-│   │   │   ├── migration-runner.ts
-│   │   │   ├── migrations
-│   │   │   │   ├── 001_create_merchants.sql
-│   │   │   │   ├── 002_create_users.sql
-│   │   │   │   ├── 003_create_transactions.sql
-│   │   │   │   └── 004_create_transactions.sql
-│   │   │   ├── queries
-│   │   │   │   ├── balances.sql
-│   │   │   │   ├── merchants.sql
-│   │   │   │   ├── transactions.sql
-│   │   │   │   └── users.sql
-│   │   │   ├── query-loader.ts
-│   │   │   ├── repositories
-│   │   │   │   └── transaction.repository.ts
-│   │   │   ├── schema_migrations.sql
-│   │   │   └── types
-│   │   │       ├── merchant.queries.ts
-│   │   │       ├── transaction.queries.ts
-│   │   │       └── user.queries.ts
-│   │   ├── tsconfig.json
-│   │   └── tsconfig.tsbuildinfo
-│   ├── queue
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   └── index.ts
-│   │   ├── tsconfig.json
-│   │   └── tsconfig.tsbuildinfo
-│   ├── test
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   ├── api
-│   │   │   │   ├── ingestion-api-flow.test.ts
-│   │   │   │   ├── ingestion-api-route.test.ts
-│   │   │   │   ├── ingestion-api-server.test.ts
-│   │   │   │   ├── ingestion-api-setup.test.ts
-│   │   │   │   └── ingestion-middleware.test.ts
-│   │   │   ├── db
-│   │   │   │   └── seed-helper.ts
-│   │   │   ├── factories
-│   │   │   │   ├── merchant.factory.ts
-│   │   │   │   ├── transaction.factory.ts
-│   │   │   │   └── user.factory.ts
-│   │   │   ├── index.ts
-│   │   │   ├── queue
-│   │   │   │   └── queue.test.ts
-│   │   │   ├── setup.ts
-│   │   │   ├── utils
-│   │   │   │   └── errors.test.ts
-│   │   │   └── worker
-│   │   │       └── transaction-worker-flow.test.ts
-│   │   └── tsconfig.json
-│   ├── types
-│   │   ├── package.json
-│   │   ├── src
-│   │   │   ├── base-types.ts
-│   │   │   └── index.ts
-│   │   ├── tsconfig.json
-│   │   └── tsconfig.tsbuildinfo
-│   └── utils
-│       ├── package.json
-│       ├── src
-│       │   ├── errors.ts
-│       │   ├── index.ts
-│       │   ├── logger.ts
-│       │   └── payload-builder.ts
-│       ├── tsconfig.json
-│       └── tsconfig.tsbuildinfo
-├── README.md
-├── scripts
-│   ├── seed-dev-data.sql
-│   └── wait-for-db.sh
-├── tsconfig.base.json
-├── tsconfig.json
-├── tsconfig.tsbuildinfo
-└── vitest.config.ts
-```
-
-### Running in Development Mode
-
-```bash
-# View logs from all services
-docker compose logs -f
-
-# View logs from specific service
-docker compose logs -f api
-
-# Rebuild after code changes
-docker compose up -d --build
-
-# Access PostgreSQL shell
-docker compose exec db psql -U simpesa
-
-# Access Redis CLI
-docker compose exec redis redis-cli
-```
-
-### Resetting the Appliance
-
-```bash
-# Stop and remove all data (triggers first-run wizard)
-docker compose down -v
-
-# Start fresh
-docker compose up -d
-```
-
-## Monitoring & Debugging
-
-### Structured Logging
-
-Every log entry includes:
-
-- `transactionId`: Unique identifier for request correlation
-- `timestamp`: ISO 8601 formatted
-- `level`: info/warn/error
-- `service`: api/worker/webhook
-- `message`: Human-readable description
-
-Example log output:
-
+**Request Example:**
 ```json
 {
-  "transactionId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-  "timestamp": "2026-02-09T14:23:45.123Z",
-  "level": "info",
-  "service": "worker",
-  "message": "Balance deducted successfully",
-  "metadata": {
-    "userId": "254712345678",
-    "amount": 500,
-    "newBalance": 9500
-  }
+  "BusinessShortCode": "174379",
+  "Password": "...",
+  "Timestamp": "20231010123456",
+  "TransactionType": "CustomerPayBillOnline",
+  "Amount": 100,
+  "PartyA": "254700000000",
+  "PartyB": "174379",
+  "PhoneNumber": "254700000000",
+  "CallBackURL": "https://your-api.com/callback",
+  "AccountReference": "Order-123",
+  "TransactionDesc": "Payment for services"
 }
 ```
 
-### Transaction Lifecycle Visualization
+### Step 2: Approve via UI
+1. Open the Dashboard at `http://localhost:5173`.
+2. Locate the "PENDING" transaction in the list.
+3. Use the **Virtual Smartphone** component to enter the PIN (Default: `1234` for test users).
+4. Click **Submit**.
 
-```
-API Request → Queue → Worker → Database → Webhook
-    │           │        │          │         │
-    └─ 200 OK   └─ Job   └─ Lock    └─ Commit └─ Retry if failed
-       <100ms     saved    acquired    changes    (exponential backoff)
-```
+**Pro Tip: Auto-Approve PIN**
+In the Dashboard UI, you can toggle the **Auto-Approve** feature. When enabled, the system will automatically submit the default PIN (`1234`) for any incoming STK Push request, allowing for hands-free end-to-end testing of your integration.
 
-## Current Status
+### Step 3: Webhook Delivery
+The system will automatically transition the transaction to `SUCCESS` and POST a callback to your `CallBackURL`.
 
-**Week 15 of 16** - Asynchronous Queuing and Webhooks Phase
+## 7. Testing Callbacks Locally
+Sim-Pesa includes a built-in endpoint to inspect webhook payloads without setting up an external tunnel (like Ngrok).
 
-Completed:
+1. Set your `CallBackURL` to `http://api:3000/callback` when registering a merchant or making a request.
+2. Watch the logs of the `api` container:
+   ```bash
+   docker compose logs -f api
+   ```
+3. You will see the full JSON payload printed in the console whenever a transaction completes.
 
-- Docker Compose orchestration
-- PostgreSQL schema with migrations
-- Basic API ingestion endpoint
-- Structured logging with Pino
-- TransactionID correlation across services
-- State machine implementation
-- Row-level locking for concurrency
-- Atomic idempotency with PostgreSQL ON CONFLICT
-- Integration testing (80%+ code coverage)
-- Redis and BullMQ integration
-- Worker-based async job processing
+## 8. API Reference (Partial)
+*Full documentation in [API.md](./docs/api.md)*
 
-In Progress:
+- `POST /oauth/v1/generate`: Get Auth Token.
+- `POST /stkpush/v1/processrequest`: Initiate STK Push.
+- `GET /api/transactions`: List recent transactions.
 
-- Webhook dispatcher with callback delivery
-- Exponential backoff retry strategy for failed deliveries
+## 8. Transaction Lifecycle
+Transactions transition through the following states:
+1. **PENDING:** Initial state after ingestion.
+2. **PROCESSING:** Worker has picked up the job and is waiting for user interaction.
+3. **SUCCESS:** PIN verified and balance updated.
+4. **FAILED:** Transaction declined, timeout, or insufficient funds.
+5. **CANCELLED:** Manually cancelled by the user in the UI.
 
-Upcoming:
+## 9. Webhook System
+The webhook system mimics Daraja's JSON structure:
+- **Success:** Contains `CallbackMetadata` with `Amount` and `PhoneNumber`.
+- **Failure:** Contains `ResultCode` and `ResultDesc`.
 
-- Security mocking (token validation) - Week 12
-- React Dashboard and transaction monitoring - Week 13
-- Virtual Smartphone PIN entry UI - Week 14
-- Onboarding wizard and first-run flow - Week 15
-- Final polish and documentation - Week 16
+**Retry Logic:**
+- Retries up to **5 times**.
+- Uses **exponential backoff** starting at 2 seconds.
 
-See the [full 16-week roadmap](ROADMAP.md) for detailed milestones.
+## 10. Development Notes
+- **Concurrency:** Uses Redis-based locking to prevent duplicate processing of the same `checkout_id`.
+- **Event Signaling:** API and Worker communicate via Redis channels (`pin:<checkout_id>`) to handle the asynchronous nature of user approval.
 
-## 🤝 Contributing
+## 11. Troubleshooting
+- **Port 5432/6379 Busy:** Ensure no local Postgres or Redis instances are running.
+- **Worker Not Processing:** Check Redis connection logs in `docker compose logs worker`.
+- **Database Not Initialized:** Check `docker compose logs db` for migration errors.
 
-This is a side-project built by a university student learning production-grade system design. Contributions, bug reports, and feature requests are welcome!
+## 12. Project Structure
+- `apps/api`: Express-based ingestion server.
+- `apps/worker`: BullMQ background processor.
+- `apps/ui`: React dashboard and simulation interface.
+- `packages/db`: Database schema, migrations, and repositories.
+- `packages/queue`: Shared BullMQ queue configurations.
+- `packages/utils`: Common utilities and logger.
 
-### Development Principles
-
-1. **Integrity First**: Every balance update must be atomic
-2. **Appliance Philosophy**: Zero manual configuration required
-3. **Pragmatic Visibility**: Structured logs over complex tracing
-4. **Simulation Empowerment**: Challenge developers to break the system
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the code of conduct and development workflow.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by the frustrations of integrating with Daraja sandbox downtime
-- Built with insights from the East African developer community
-- Special thanks to the creators of BullMQ, PostgreSQL, and Docker
-
-## 📞 Support & Feedback
-
-- **Issues**: [GitHub Issues](https://github.com/paulmurithi/simpesa/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/paulmurithi/simpesa/discussions)
-- **Email**: murithikirerapaul@gmail.com
-
----
-
-**Powered by Paulos Network Meru, Kenya**
-
-_Making M-Pesa integration testing deterministic, one transaction at a time._
+## 13. License
+No license specified.
