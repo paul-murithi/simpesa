@@ -27,3 +27,7 @@ concurrency.ts
 *.tsconfig.tsbuildinfo.*
 *.tsconfig.tscache
 *.tsconfig.tscache.*
+
+# VitePress
+docs-site/docs/.vitepress/dist
+docs-site/docs/.vitepress/cache
