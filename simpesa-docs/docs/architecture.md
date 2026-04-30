@@ -27,6 +27,36 @@ Uses Redis Pub/Sub for low-latency signaling between the API and Worker.
 
 ## 2. Event Flow: STK Push Lifecycle
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as Ingestion API
+    participant Q as BullMQ (Redis)
+    participant W as Transaction Worker
+    participant U as UI (Virtual Phone)
+    participant R as Redis Pub/Sub
+
+    C->>A: POST /stkpush/v1/processrequest
+    A->>A: Create PENDING Transaction
+    A->>Q: Enqueue Payment Job
+    A-->>C: 200 OK (CheckoutID)
+    
+    Q->>W: Process Job
+    W->>W: Set status to PROCESSING
+    W->>R: Subscribe to pin:checkout_id
+    
+    U->>A: POST /stkpush/pin/:checkout_id
+    A->>R: Publish "CORRECT"
+    
+    R->>W: Receive "CORRECT"
+    W->>W: Update User Balance
+    W->>W: Set status to SUCCESS
+    W->>Q: Enqueue Webhook Job
+    
+    Q->>W: Process Webhook
+    W->>C: POST Callback URL
+```
+
 1.  **Initiation:** Client calls `/stkpush/v1/processrequest`.
 2.  **Pickup:** Worker picks up the job and waits for PIN.
 3.  **Simulation:** User enters PIN via Dashboard UI.

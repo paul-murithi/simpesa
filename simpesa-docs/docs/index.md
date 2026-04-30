@@ -48,9 +48,9 @@ Sim-Pesa follows a microservices-inspired architecture:
 3. The system will be ready once the DB migrations complete automatically.
 
 ## 5. First Run (Onboarding Flow)
-When you first launch Sim-Pesa, you need to register a Merchant to obtain credentials.
+When you first launch Sim-Pesa, the system checks the registration status via the `/api/v1/status` endpoint. If no merchant is registered (`firstRun: true`), you will be automatically redirected to the onboarding wizard.
 
-1. Navigate to `http://localhost:5173/onboarding` (or use the API).
+1. Navigate to `http://localhost:5173/onboarding` (if not automatically redirected).
 2. Register your merchant `short_code` and `callback_url`.
 3. The system comes pre-seeded with a default test user (if `seed-dev-data.sql` is applied) or you can manage users via the DB.
 

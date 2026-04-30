@@ -27,3 +27,5 @@ concurrency.ts
 *.tsconfig.tsbuildinfo.*
 *.tsconfig.tscache
 *.tsconfig.tscache.*
+
+.docusaurus

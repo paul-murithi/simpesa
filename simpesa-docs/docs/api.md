@@ -45,7 +45,52 @@ Initiates an STK Push transaction.
 
 ---
 
-## 3. Webhook Format
+## 3. Transactions
+
+### List Transactions
+Get a list of the 50 most recent transactions.
+
+- **Method:** `GET`
+- **Path:** `/api/transactions`
+- **Response:**
+```json
+[
+  {
+    "request_id": "...",
+    "checkout_id": "...",
+    "amount": "100.00",
+    "status": "SUCCESS",
+    "created_at": "..."
+  }
+]
+```
+
+### Real-time Stream (SSE)
+Subscribe to real-time transaction updates via Server-Sent Events.
+
+- **Method:** `GET`
+- **Path:** `/api/transactions/stream`
+- **Response:** `text/event-stream` (JSON payloads of updated transactions)
+
+---
+
+## 4. System Status
+
+### Check First Run Status
+Used by the UI to determine if the onboarding flow should be displayed.
+
+- **Method:** `GET`
+- **Path:** `/api/v1/status`
+- **Response:**
+```json
+{
+  "firstRun": false
+}
+```
+
+---
+
+## 5. Webhook Format
 
 Sim-Pesa sends a POST request to your `CallBackURL` when a transaction completes.
 
