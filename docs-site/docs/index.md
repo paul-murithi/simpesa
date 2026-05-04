@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started (5 min)
-      link: /guide/developer
+      link: /guide/quickstart
     - theme: alt
       text: View on GitHub
       link: https://github.com/paul-murithi/simpesa
