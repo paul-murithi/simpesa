@@ -43,12 +43,37 @@ Sim-Pesa follows a microservices-inspired architecture:
 - Docker Compose
 
 ### Installation & Run
-1. Clone the repository.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/paul-murithi/simpesa.git
+   cd simpesa
+   ```
 2. Start the services:
    ```bash
    docker compose up -d
    ```
 3. The system will be ready once the DB migrations complete automatically.
+
+## 5. Architecture Deep Dive
+
+### 2-Phase Transaction Processing
+Sim-Pesa uses a robust 2-phase approach to ensure data consistency and mimic real-world asynchronous payment flows:
+
+1.  **Phase 1 (Validation & Locking):** The worker picks up a job, starts a database transaction, and locks the User and Merchant rows using `SELECT FOR UPDATE`. It validates the user's balance and transitions the transaction to `PROCESSING`.
+2.  **Interaction Waiting:** The worker then enters an asynchronous wait state, listening on a Redis Pub/Sub channel for a PIN signal from the UI.
+3.  **Phase 2 (Finalization):** Once a signal is received (CORRECT, WRONG_PIN, CANCELLED, or TIMEOUT), the worker starts a second database transaction. If the PIN was correct, it debits the user, credits the merchant, and updates the transaction to a terminal `SUCCESS` state.
+
+### Idempotency & Redis Fingerprinting
+To prevent duplicate transaction requests within a short window, Sim-Pesa implements a fingerprinting mechanism:
+- A SHA-256 hash is generated from the `phone_number`, `short_code`, `amount`, and `external_reference`.
+- The API attempts to set this hash as a key in Redis using `SET NX` with a 60-second TTL.
+- Subsequent identical requests within this window are rejected, ensuring exactly-once ingestion.
+
+### Reliable Webhooks
+After a transaction reaches a terminal state, a webhook job is enqueued:
+- **Structure:** Mimics Daraja's JSON response format exactly.
+- **Retries:** 5 attempts with exponential backoff (starting at 2s).
+- **Persistence:** All webhook attempts and responses are logged in the database for debugging.
 
 ### Services & Ports
 | Service | External Port | Description |
@@ -101,14 +126,18 @@ In the Dashboard UI, you can toggle the **Auto-Approve** feature. When enabled, 
 The system will automatically transition the transaction to `SUCCESS` and POST a callback to your `CallBackURL`.
 
 ## 7. Testing Callbacks Locally
-Sim-Pesa includes a built-in endpoint to inspect webhook payloads without setting up an external tunnel (like Ngrok).
+Sim-Pesa includes two ways to test webhooks locally:
 
+### Option A: Internal API Sink
+Sim-Pesa includes a built-in endpoint to inspect webhook payloads without setting up an external tunnel (like Ngrok).
 1. Set your `CallBackURL` to `http://api:3000/callback` when registering a merchant or making a request.
-2. Watch the logs of the `api` container:
-   ```bash
-   docker compose logs -f api
-   ```
-3. You will see the full JSON payload printed in the console whenever a transaction completes.
+2. Watch the logs of the `api` container: `docker compose logs -f api`.
+3. You will see the full JSON payload printed in the console.
+
+### Option B: Your Native Application
+To deliver callbacks to an application running directly on your host machine (outside Docker):
+- **Hostname:** Use `http://host.docker.internal:PORT/...` instead of `localhost`. Docker resolves this to your host machine's IP.
+- **Linux Users:** You must manually add `host.docker.internal` to your `docker-compose.yml` (see Troubleshooting).
 
 ## 8. API Reference (Partial)
 *Full documentation in [API.md](./docs/api.md)*
@@ -142,6 +171,18 @@ The webhook system mimics Daraja's JSON structure:
 - **Port 5432/6379 Busy:** Ensure no local Postgres or Redis instances are running.
 - **Worker Not Processing:** Check Redis connection logs in `docker compose logs worker`.
 - **Database Not Initialized:** Check `docker compose logs db` for migration errors.
+
+### Callbacks not arriving (Host machine)
+If you are running your application natively on your host machine and not receiving callbacks:
+
+1. **Host Resolution (Linux):** Docker on Linux does not automatically map `host.docker.internal`. Add this to your `worker` service in `docker-compose.yml`:
+   ```yaml
+   worker:
+     # ...
+     extra_hosts:
+       - "host.docker.internal:host-gateway"
+   ```
+2. **Bind Address:** Ensure your application is bound to `0.0.0.0` (all interfaces) rather than `127.0.0.1` (loopback only). Since Docker's request originates from a virtual bridge, your OS will reject connections to `127.0.0.1` that don't come from the host itself. Most modern frameworks do this by default, so check this only if you've already fixed the hostname.
 
 ## 12. Project Structure
 - `apps/api`: Express-based ingestion server.

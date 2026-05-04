@@ -78,10 +78,14 @@ const OnboardingPage = ({ onComplete }: OnboardingPageProps) => {
               id="callbackUrl"
               value={callbackUrl}
               onChange={(e) => setCallbackUrl(e.target.value)}
-              placeholder="https://your-api.com/callback"
+              placeholder="http://host.docker.internal:8080/api/mpesa/callback"
               required
             />
-            <small>This is where we'll send STK Push results.</small>
+            <small>
+              This is where we'll send STK Push results. <br />
+              <strong>Note:</strong> <code>localhost</code> will not work from inside Docker. Use{" "}
+              <code>host.docker.internal</code> instead (See README for Linux fix).
+            </small>
           </div>
 
           {error && <div className="error-message">{error}</div>}
