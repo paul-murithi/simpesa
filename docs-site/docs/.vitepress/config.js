@@ -3,7 +3,6 @@ import { withMermaid } from "vitepress-plugin-mermaid";
 
 export default withMermaid(
   defineConfig({
-    base: "/simpesa/",
     title: "Sim-Pesa",
     description: "Local-first M-Pesa API Simulator",
     themeConfig: {
