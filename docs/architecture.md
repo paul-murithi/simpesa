@@ -14,13 +14,10 @@ The engine of the simulator.
 - **Responsibility:** Manages the transaction state machine, performs balance updates, and handles webhook dispatches.
 - **Concurrency:** Uses row-level locking (`SELECT ... FOR UPDATE`) in PostgreSQL to ensure data consistency during balance updates.
 
-### 1.3 Signaling Layer (Redis)
-Since the worker needs to wait for user interaction (PIN entry), it uses Redis Pub/Sub for low-latency signaling.
-- **Flow:**
-  1. Worker subscribes to `pin:<checkout_id>`.
-  2. UI sends PIN via API.
-  3. API publishes the result to the Redis channel.
-  4. Worker receives the signal and resumes processing.
+### 1.3 Signaling & Idempotency Layer (Redis)
+Sim-Pesa leverages Redis for both real-time communication and request protection.
+- **Signaling:** Since the worker needs to wait for user interaction (PIN entry), it uses Redis Pub/Sub for low-latency signaling. The worker subscribes to `pin:<checkout_id>` and waits for a signal (CORRECT, CANCELLED, etc.) from the UI via the API.
+- **Fingerprinting (Idempotency):** To prevent duplicate transaction requests, the API generates a SHA-256 hash (fingerprint) of the request parameters. It uses Redis `SET NX` with a 60-second TTL to ensure exactly-once ingestion of identical requests.
 
 ### 1.4 Persistent Storage (PostgreSQL)
 - **Merchants:** Registered entities with `short_code` and `callback_url`.
@@ -28,37 +25,27 @@ Since the worker needs to wait for user interaction (PIN entry), it uses Redis P
 - **Transactions:** Audit log and state tracker for every request.
 - **Webhooks:** Tracks every dispatch attempt for observability.
 
-## 2. Event Flow: STK Push Lifecycle
+## 2. Event Flow: 2-Phase STK Push Lifecycle
 
-The following sequence describes a successful STK Push:
+Sim-Pesa uses a robust 2-phase approach to ensure data consistency and mimic real-world asynchronous flows:
 
-1.  **Initiation:** `POST /stkpush/v1/processrequest`
-    - API generates a `checkout_id`.
-    - API saves transaction as `PENDING`.
-    - API enqueues `stk-push-request` job.
-    - API returns acknowledgement to client.
-2.  **Pickup:** Worker picks up the job.
-    - Worker transitions status to `PROCESSING`.
-    - Worker validates that the merchant and user exist.
-    - Worker locks the user row to ensure balance integrity.
-    - Worker enters a wait state (`waitForPin`) for 15 minutes (default).
-3.  **Simulation:** User interaction via Dashboard.
-    - User sees the transaction on the "Virtual Phone".
-    - User enters the PIN and submits.
-    - UI calls `POST /stkpush/pin/:checkout_id`.
-    - API validates PIN against the DB and publishes `CORRECT` to Redis.
-4.  **Completion:** Worker receives `CORRECT`.
-    - Worker deducts the amount from the User's balance.
-    - Worker updates transaction status to `SUCCESS`.
-    - Worker enqueues a `send-webhook` job.
-5.  **Notification:** Webhook Worker picks up the job.
-    - Worker POSTs the callback payload to the Merchant's `callback_url`.
-    - If it fails, BullMQ retries with exponential backoff.
+1.  **Ingestion:** API receives the request, generates a fingerprint, and if unique, records a `PENDING` transaction and enqueues a job.
+2.  **Phase 1 (Validation & Locking):**
+    - Worker picks up the job and starts a DB transaction.
+    - Locks User and Merchant rows (`SELECT ... FOR UPDATE`).
+    - Validates balance and transitions status to `PROCESSING`.
+    - Commits the DB transaction and enters a wait state.
+3.  **Simulation:** User enters PIN or cancels in the Dashboard. API publishes the signal to Redis.
+4.  **Phase 2 (Finalization):**
+    - Worker receives the signal and starts a *second* DB transaction.
+    - If `CORRECT`: Debits User, Credits Merchant, and updates status to `SUCCESS`.
+    - If `FAILED/CANCEL/TIMEOUT`: Updates status to terminal failure state.
+    - Commits the DB transaction and enqueues a webhook job.
+5.  **Notification:** Webhook Worker delivers the callback with exponential backoff.
 
 ## 3. Data Consistency Approach
 
-- **Idempotency:** The API uses a Redis-based lock on the combination of `BusinessShortCode`, `Amount`, and `PhoneNumber` to prevent accidental duplicate submissions within a short window.
-- **Transactional Integrity:** All balance updates and status transitions are wrapped in PostgreSQL transactions.
+- **Transactional Integrity:** All balance updates and status transitions are wrapped in PostgreSQL transactions (see 2-Phase flow above).
 - **Queue Reliability:** BullMQ ensures that jobs are not lost even if a worker crashes. Jobs are moved to "failed" and can be retried.
 
 ## 4. Webhook Retry Strategy

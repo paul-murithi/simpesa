@@ -36,11 +36,17 @@ Initiates an STK Push transaction.
 - **Body:**
 ```json
 {
-  "short_code": "174379",
-  "phone_number": "254700000000",
-  "amount": 100,
-  "external_reference": "Order-123",
-  "callback_url": "https://your-api.com/callback"
+  "BusinessShortCode": "174379",
+  "Password": "...",
+  "Timestamp": "20231010123456",
+  "TransactionType": "CustomerPayBillOnline",
+  "Amount": 100,
+  "PartyA": "254700000000",
+  "PartyB": "174379",
+  "PhoneNumber": "254700000000",
+  "CallBackURL": "https://your-api.com/callback",
+  "AccountReference": "Order-123",
+  "TransactionDesc": "Payment for services"
 }
 ```
 - **Response (200 OK):**
@@ -154,13 +160,4 @@ Sim-Pesa uses a set of numeric result codes in the webhook callbacks to indicate
 | **17** | Internal Failure |
 | **9999** | Request processing failed. Please try again later. |
 
-## 7. Testing Callbacks Locally
-
-Sim-Pesa includes a built-in endpoint to inspect webhook payloads without setting up an external tunnel (like Ngrok).
-
-1. Set your `CallBackURL` to `http://api:3000/callback` when making a request.
-2. Watch the logs of the `api` container:
-   ```bash
-   docker compose logs -f api
-   ```
-3. You will see the full JSON payload printed in the console whenever a transaction completes.
+For a full list of codes and their meanings, refer to the `packages/utils/src/map-result-code.ts` file.
