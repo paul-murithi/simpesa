@@ -28,4 +28,6 @@ concurrency.ts
 *.tsconfig.tscache
 *.tsconfig.tscache.*
 
-.docusaurus
+# VitePress
+docs-site/docs/.vitepress/dist
+docs-site/docs/.vitepress/cache
