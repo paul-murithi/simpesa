@@ -32,14 +32,15 @@ Sim-Pesa uses a robust 2-phase approach to ensure data consistency and mimic rea
 1.  **Ingestion:** API receives the request, generates a fingerprint, and if unique, records a `PENDING` transaction and enqueues a job.
 2.  **Phase 1 (Validation & Locking):**
     - Worker picks up the job and starts a DB transaction.
-    - Locks User and Merchant rows (`SELECT ... FOR UPDATE`).
+    - Locks User row (`SELECT ... FOR UPDATE`).
     - Validates balance and transitions status to `PROCESSING`.
     - Commits the DB transaction and enters a wait state.
 3.  **Simulation:** User enters PIN or cancels in the Dashboard. API publishes the signal to Redis.
 4.  **Phase 2 (Finalization):**
     - Worker receives the signal and starts a *second* DB transaction.
+    - Re-acquires locks for User and Merchant.
     - If `CORRECT`: Debits User, Credits Merchant, and updates status to `SUCCESS`.
-    - If `FAILED/CANCEL/TIMEOUT`: Updates status to terminal failure state.
+    - If `FAILED/CANCEL/TIMEOUT`: Updates status to terminal failure state (`FAILED` or `CANCELLED`).
     - Commits the DB transaction and enqueues a webhook job.
 5.  **Notification:** Webhook Worker delivers the callback with exponential backoff.
 

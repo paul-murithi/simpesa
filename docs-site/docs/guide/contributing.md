@@ -1,67 +1,71 @@
-# Developer Guide
+# Contributing
 
-This guide provides technical details for developers working on the Sim-Pesa codebase.
+Contribute to Sim-Pesa by improving the simulator, adding new Daraja endpoints, or refining the documentation. This guide covers the technical architecture and development workflow.
 
-## 1. Error Handling
+## Technical Stack
 
-Sim-Pesa uses a standardized error handling system located in `packages/utils/src/errors.ts`. 
+- **API/Worker**: Node.js + TypeScript
+- **Database**: PostgreSQL 16
+- **Queue**: Redis + BullMQ
+- **Dashboard**: React + Vanilla CSS
+- **Orchestration**: Docker Compose
 
-### Custom Error Classes
-- **BaseError**: The foundation for all custom errors. Includes `statusCode`, `isOperational` flag, and `developerHint`.
-- **DomainError**: For business logic violations (e.g., Insufficient Funds).
-- **ValidationError**: For invalid request payloads.
-- **NotFoundError**: When a resource (user, merchant, transaction) is missing.
-- **ConflictError**: Used for idempotency locks (duplicate transactions).
-- **ExternalServiceError**: For failures in downstream systems (Redis, DB).
+## Development Workflow
 
-### Usage Example
-```typescript
-if (!user) {
-  throw new NotFoundError("User not found", "Check if the phone number exists in the database.");
-}
+### 1. Prerequisites
+- Node.js 20+
+- Docker & Docker Compose
+- npm
+
+### 2. Setup
+```bash
+git clone https://github.com/paul-murithi/simpesa.git
+cd simpesa
+npm install
+docker compose up -d
 ```
 
----
+### 3. Database Migrations
+Sim-Pesa uses a custom migration runner in `packages/db`.
+```bash
+# Apply migrations
+npm run db:migrate
 
-## 2. Database Management
+# Seed development data
+npm run db:seed
 
-Sim-Pesa uses a custom migration runner instead of a third-party ORM migration tool to keep dependencies minimal.
+# Rollback last migration
+npm run db:rollback
+```
 
-### Migration Commands
-Run these from the project root:
+## Internal Architecture
 
-- **Apply Migrations**: `npm run db:migrate`
-- **Seed Dev Data**: `npm run db:seed`
-- **Rollback Last**: `npm run db:rollback`
+### Error Handling
+Custom error classes are located in `packages/utils/src/errors.ts`. Always use these for consistent API responses:
+- `DomainError`: Business logic violations.
+- `ValidationError`: Zod parsing failures.
+- `NotFoundError`: Missing DB resources.
+- `ConflictError`: Idempotency lock hits.
 
-### How it Works
-1.  **Schema Tracking**: The `schema_migrations` table tracks applied versions.
-2.  **Versioning**: Migrations are files in `packages/db/src/migrations/` prefixed with a number (e.g., `001_initial.sql`).
-3.  **Idempotency**: The runner handles "already exists" errors gracefully to prevent partial migration failures.
+### Real-time Signaling
+The worker waits for user interaction via Redis Pub/Sub:
+- **Channel**: `pin:<checkout_id>`
+- **Signals**: `CORRECT`, `WRONG_PIN`, `CANCELLED`, `TIMEOUT`.
 
----
+### Webhook Dispatcher
+Located in `apps/worker/src/services/webhook.service.ts`. It handles:
+- Exponential backoff (5 retries).
+- Atomic delivery status updates.
+- Result logging to PostgreSQL.
 
-## 3. Real-time Signaling (Redis Pub/Sub)
+## Local Testing
 
-The core "wait-for-pin" logic relies on Redis.
-
-- **Channel Name**: `pin:<checkout_id>`
-- **Signals**:
-  - `CORRECT`: PIN matches the user's stored PIN.
-  - `WRONG_PIN`: PIN is incorrect.
-  - `CANCELLED`: User clicked cancel in the UI.
-  - `TIMEOUT`: No signal received within `PIN_TIMEOUT_MS`.
-
----
-
-## 4. Local Development Tips
-
-### Inspecting Redis
-You can monitor signals in real-time:
+### Inspecting Redis signals
+Monitor signals in real-time during a transaction:
 ```bash
 docker exec -it simpesa-redis redis-cli psubscribe "pin:*"
 ```
 
 ### Mocking Webhooks
-Use the built-in callback logger by setting your `CallBackURL` to:
-`http://api:3000/callback`
+The API includes a built-in callback logger for testing. Set your `callback_url` to:
+`http://host.docker.internal:3000/callback`

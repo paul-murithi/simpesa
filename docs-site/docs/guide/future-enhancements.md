@@ -1,29 +1,31 @@
 # Future Enhancements
 
-Sim-Pesa has achieved its primary goal of providing a robust local simulator for M-Pesa STK Push. However, the vision for this project extends far beyond just one API.
+Sim-Pesa provides a robust local environment for M-Pesa STK Push. This page outlines the roadmap for expanding Sim-Pesa into a comprehensive M-Pesa ecosystem simulator.
 
-## 🚀 The Vision
-We want Sim-Pesa to be the ultimate developer companion for the entire M-Pesa ecosystem. This project could evolve into a full-featured mock environment for every Daraja endpoint.
+## Vision
 
-## 💡 Potential Features
+Sim-Pesa aims to be the standard local development appliance for M-Pesa integrations, providing mocks and stateful simulations for every major Daraja endpoint.
+
+## Planned Features
 
 ### 1. Expanded Daraja Endpoints
-- **B2C (Business to Customer)**: Simulate disbursements to users.
-- **C2B (Customer to Business)**: Mock the Paybill and Buy Goods transaction flows.
-- **B2B (Business to Business)**: Simulate transfers between different shortcodes.
-- **Transaction Status Query**: Mock the polling of transaction results.
-- **Account Balance Query**: Simulate checking a merchant's current balance.
-- **Reversals**: Test your application's handling of transaction reversals.
+- **B2C (Business to Customer)** -- Simulate salary disbursements and promotional payments to users.
+- **C2B (Customer to Business)** -- Mock Paybill and Buy Goods flows where the user initiates the payment from their handset.
+- **B2B (Business to Business)** -- Simulate transfers between different ShortCodes.
+- **Transaction Status Query** -- Mock the polling of transaction results for long-running processes.
+- **Account Balance Query** -- Simulate checking real-time merchant balances.
+- **Reversals** -- Test application logic for handling reversed transactions.
 
 ### 2. Developer Experience (DX)
-- **Multi-Merchant Support**: Allow managing multiple merchants with different configurations simultaneously.
-- **Custom Failure Injection**: A "Chaos" mode where you can force random network failures or specific error codes to test your app's resilience.
-- **Import/Export Data**: Easily share test scenarios and user seeds with teammates.
+- **Multi-Merchant Support** -- Manage multiple ShortCodes with distinct CallbackURLs and balance pools.
+- **Custom Failure Injection** -- A "Chaos" mode to force random timeouts, network drops, or specific M-Pesa error codes.
+- **Scenario Import/Export** -- Save and share complex test scenarios (e.g., "locked user with high balance") as JSON files.
 
 ### 3. Community Contributions
-This is an open-source project, and we welcome ideas from the community!
-- What M-Pesa features do you struggle to test?
-- How can we make the simulation even more realistic?
-- Are there specific edge cases in Daraja that Sim-Pesa should mirror?
 
-If you're interested in building any of these features, check out the [Contributing Guide](/guide/contributing).
+Sim-Pesa is open source and driven by developer needs in East Africa. We welcome contributions for:
+- Mapping more obscure Daraja error codes.
+- Improving the Virtual Smartphone UI aesthetics.
+- Creating client libraries for common languages (Python, PHP, Go).
+
+If you want to help build these features, check out the [Contributing Guide](/guide/contributing).

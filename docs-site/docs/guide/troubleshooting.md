@@ -1,29 +1,47 @@
 # Troubleshooting
 
-Common issues and how to fix them.
+Resolve common issues encountered when running Sim-Pesa locally.
 
-## 1. Callback not received?
-- **Check the `api` container logs**: Sim-Pesa prints every outgoing callback attempt.
+## Containers failing to start
+
+**Symptoms**: `docker compose up` exits with an error or services show `restarting` in `docker compose ps`.
+
+- **Port Conflict**: Ports 3000 (API), 5173 (Dashboard), 5432 (Postgres), or 6379 (Redis) are already in use.
+  - **Fix**: Stop the conflicting local service or change the port mapping in `docker-compose.yml`.
+- **Docker Engine not running**: Ensure Docker Desktop or the Docker daemon is active.
+- **Insufficient Permissions**: On Linux, you may need `sudo` for `docker compose` if your user isn't in the `docker` group.
+
+## Callback not received
+
+**Symptoms**: Transaction shows `SUCCESS` in the dashboard, but your application never receives the webhook.
+
+- **Unreachable URL**: If your application is running on your host machine, `localhost:8080` will not work inside the Docker container.
+  - **Fix**: Use `http://host.docker.internal:8080/callback`.
+- **Wrong Protocol**: Ensure you aren't using `https` locally unless you have set up a reverse proxy with SSL.
+- **Check Logs**: Inspect the worker logs for delivery errors and retry attempts:
   ```bash
-  docker compose logs -f api
+  docker compose logs -f worker
   ```
-- **Verify `CallBackURL`**: If you're testing from another container, use `http://api:3000/callback`. If testing from your host machine, ensure the URL is reachable from within the Docker network.
-- **Check the Webhook Queue**: If the initial attempt fails, the job moves to a retry state. Check the `worker` logs.
 
-## 2. Duplicate request blocked?
-- Sim-Pesa blocks identical requests for 60 seconds to prevent double-charging.
-- **Fix**: Change the `AccountReference` or `ExternalReference` in your request, or wait for 60 seconds.
+## "Merchant does not exist" Error
 
-## 3. Container not starting?
-- **Port Conflict**: Ports 3000, 5173, 5432, or 6379 might be used by another service on your machine.
-- **Fix**: Stop the conflicting services or change the port mappings in `docker-compose.yml`.
-- **Database initialization**: On the first run, migrations might take a few seconds. Check `docker compose logs db`.
+**Symptoms**: API returns a 404 error when triggering an STK Push.
 
-## 4. "Merchant does not exist"
-- You must register a merchant before you can trigger an STK Push.
-- **Fix**: Go to `http://localhost:5173/onboarding` and register your shortcode.
+- **Fix**: You must complete the **Appliance Setup Wizard** on first run. Open [http://localhost:5173](http://localhost:5173) and follow the prompts to register your ShortCode (e.g., `174379`).
 
-## 5. Redis connection errors
-- If the API or Worker can't reach Redis, the system will fail.
-- **Fix**: Ensure the `redis` container is healthy: `docker compose ps`.
-- Restart the services: `docker compose restart`.
+## Duplicate transaction rejected
+
+**Symptoms**: API returns a 409 Conflict error.
+
+- **Fingerprint Lock**: Sim-Pesa prevents identical requests (same phone, amount, and reference) for 60 seconds.
+  - **Fix**: Wait 60 seconds or change the `external_reference` in your request.
+
+## Resetting everything
+
+**Symptoms**: Corrupted database state or forgotten configuration.
+
+- **Fix**: Perform a full wipe and restart. This deletes all transactions, users, and merchant data.
+  ```bash
+  docker compose down -v
+  docker compose up -d
+  ```

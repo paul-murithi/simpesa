@@ -1,43 +1,51 @@
-# How M-Pesa Actually Works
+# How M-Pesa Works
 
-Understanding the underlying M-Pesa architecture is key to building robust integrations. M-Pesa (via the Daraja API) primarily uses an **asynchronous** flow for mobile-originated payments (STK Push).
+Integrating with M-Pesa requires understanding its asynchronous nature. Payments are not instant; they are requests that depend on user interaction and external system availability.
 
-## The STK Push Flow
-STK Push (Shortcode-to-Key) is a method where the merchant initiates a payment request to the customer's phone.
+## The STK Push Lifecycle
+
+STK Push (ShortCode-to-Key) is a merchant-initiated payment where the customer receives a prompt on their handset to enter their M-Pesa PIN.
 
 ```mermaid
 sequenceDiagram
     participant App as Your Application
-    participant Daraja as Daraja API (Sim-Pesa)
-    participant Mpesa as M-Pesa System
-    participant Phone as Customer's Phone
+    participant Sim as Sim-Pesa (Daraja API)
+    participant Worker as Background Worker
+    participant UI as Dashboard (Phone UI)
 
-    App->>Daraja: 1. Initiate Request (POST /stkpush)
-    Daraja->>App: 2. Acknowledge (CheckoutID)
-    Daraja->>Mpesa: 3. Trigger Push
-    Mpesa->>Phone: 4. Display PIN Prompt
-    Phone-->>Mpesa: 5. User Enters PIN
-    Mpesa->>Daraja: 6. Transaction Processed
-    Daraja->>App: 7. Callback (Webhook)
+    App->>Sim: 1. POST /v1/processrequest
+    Sim-->>App: 2. 200 OK (CheckoutRequestID)
+    Sim->>Worker: 3. Enqueue payment task
+    Worker->>UI: 4. Display STK Prompt via SSE
+    UI-->>Worker: 5. User enters PIN / Cancel
+    Worker->>Worker: 6. Update balances (ACID)
+    Worker->>App: 7. POST Callback (Webhook)
 ```
 
-### 1. Ingestion & Acknowledgement
-When you send a request to Daraja, it doesn't process the payment immediately. Instead, it validates the request and returns a `CheckoutRequestID`. This is Daraja saying, "I've received your request and will try to reach the customer."
+### 1. Initiation & Acknowledgment
+Your application initiates a request. The API validates the payload and returns an acknowledgment containing a `CheckoutRequestID`. This is **not** a confirmation of payment; it only confirms the request was accepted for processing.
 
 ### 2. The PIN Prompt
-The customer receives a popup on their phone asking for their M-Pesa PIN. This happens outside of your application's control.
+The customer sees a popup on their phone displaying the amount and merchant name. They must enter their 4-digit PIN to authorize the transfer.
 
 ### 3. The Callback (Webhook)
-Since the user might take seconds or minutes to enter their PIN (or might never do it), the process is asynchronous. Once the transaction is finalized (Success, Cancel, or Timeout), M-Pesa sends a **Callback** to the `CallBackURL` you provided in the initial request.
+Once the user interacts with the prompt (or it times out), M-Pesa sends a POST request to your `CallBackURL`. This payload contains the `ResultCode` and `ResultDesc` indicating the final outcome (Success, Wrong PIN, Cancelled, etc.).
 
-**This is the most critical part of your integration.** You must have a public-facing endpoint that can receive and process this JSON payload.
+**Processing the callback is the only way to confirm a payment.**
 
-## Why is it Async?
-- **User Latency:** Users might be away from their phones.
-- **Network Latency:** SMS and USSD/STK signals can be delayed.
-- **Concurrency:** Millions of transactions happen simultaneously; blocking until a user enters a PIN is not scalable.
+## Architectural Requirements
 
-## Common Pitfalls
-- **Ignoring the Callback:** Only relying on the acknowledgement (Step 2) is a mistake. Step 2 only means the request was *accepted*, not *paid*.
-- **Timeouts:** M-Pesa usually gives the user about 30-60 seconds to enter their PIN.
-- **Idempotency:** If a user clicks "Pay" twice, you should handle it gracefully to avoid double-charging. (Sim-Pesa helps you test this with its fingerprinting feature!)
+### Public Endpoints
+In production, your `CallBackURL` must be a publicly accessible HTTPS endpoint. Safaricom's systems cannot reach `localhost`. (Sim-Pesa allows `http://host.docker.internal` for local development).
+
+### Asynchronicity
+Your application must be designed to handle the delay between Step 2 (Acknowledgment) and Step 7 (Callback). This usually involves storing the `CheckoutRequestID` and updating your order status once the webhook arrives.
+
+### Idempotency
+Duplicate requests can happen due to network retries. You must use the `ExternalReference` or `CheckoutRequestID` to ensure you don't process the same payment twice. Sim-Pesa helps test this with its built-in fingerprinting.
+
+## Why Async?
+M-Pesa uses an asynchronous model to handle:
+- **Handset Latency** -- Users may not have their phones immediately available.
+- **Network Reliability** -- SMS and USSD signals are not guaranteed to be instantaneous.
+- **Scalability** -- Decoupling ingestion from authorization allows the system to handle millions of concurrent requests without blocking.

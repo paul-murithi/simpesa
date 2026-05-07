@@ -40,14 +40,14 @@ Initiates an STK Push transaction.
   "phone_number": "254700000000",
   "amount": 100,
   "external_reference": "Order-123",
-  "callback_url": "https://your-api.com/callback"
+  "callback_url": "http://host.docker.internal:8080/callback"
 }
 ```
 - **Response (200 OK):**
 ```json
 {
-  "MerchantRequestID": "...",
-  "CheckoutRequestID": "...",
+  "MerchantRequestID": "550e8400-e29b-41d4-a716-446655440000",
+  "CheckoutRequestID": "678e8400-e29b-41d4-a716-446655440123",
   "ResponseCode": "0",
   "ResponseDescription": "Success. Request accepted for processing"
 }
@@ -83,8 +83,8 @@ Register a new merchant in the system.
 - **Body:**
 ```json
 {
-  "shortCode": "174379",
-  "callbackUrl": "https://your-api.com/callback"
+  "short_code": "174379",
+  "callback_url": "http://host.docker.internal:8080/callback"
 }
 ```
 
@@ -101,11 +101,17 @@ Get a list of all transactions.
 ```json
 [
   {
-    "request_id": "...",
-    "checkout_id": "...",
+    "checkout_id": "678e8400-e29b-41d4-a716-446655440123",
+    "external_reference": "Order-123",
+    "short_code": "174379",
+    "phone_number": "254700000000",
     "amount": "100.00",
     "status": "SUCCESS",
-    "created_at": "..."
+    "created_at": "2026-05-07T12:34:56.789Z",
+    "metadata": { ... },
+    "merchant_balance": "10000.00",
+    "user_balance": "9900.00",
+    "user_status": "ACTIVE"
   }
 ]
 ```

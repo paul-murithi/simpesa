@@ -1,33 +1,44 @@
-# Moving from Sim-Pesa to Daraja
+# Transition to Daraja
 
-Once you've built and tested your integration with Sim-Pesa, moving to the real Safaricom Daraja API is straightforward. Sim-Pesa is designed to be a **complement** to Daraja, not a replacement.
+Moving from Sim-Pesa to Safaricom's production Daraja API is designed to be seamless. Because Sim-Pesa mimics Daraja's asynchronous callback model, your core business logic remains unchanged.
 
-## What Stays the Same?
-- **Request Payloads**: The JSON structure you send to `/stkpush/v1/processrequest` is identical.
-- **Response Payloads**: The acknowledgment and callback JSON you receive from Sim-Pesa match Daraja's format.
-- **Asynchronous Logic**: Your application's logic for handling the `CheckoutRequestID` and waiting for a webhook remains the same.
+## What Stays the Same
 
-## What Changes?
+- **The Callback Payload**: The JSON structure of the webhook is identical. Your callback handler will work without modification.
+- **Asynchronous Flow**: The process of receiving a `CheckoutRequestID` and waiting for a webhook is preserved.
+- **Result Codes**: Sim-Pesa uses the real Daraja result codes (`0`, `1`, `1032`, `1037`, etc.).
+
+## What Changes
 
 ### 1. Base URLs
 Update your API base URLs from `localhost` to Safaricom's endpoints:
 - **Sandbox**: `https://sandbox.safaricom.co.ke`
 - **Production**: `https://api.safaricom.co.ke`
 
-### 2. Credentials
-Replace your Sim-Pesa `ConsumerKey` and `ConsumerSecret` with those provided in your Daraja Portal app.
+### 2. Payload Field Names
+Sim-Pesa uses a simplified JSON schema for local testing. Daraja requires specific CamelCase field names.
 
-### 3. Callback URL
-Ensure your `CallBackURL` is a publicly accessible HTTPS endpoint. While Sim-Pesa works with `http://localhost`, Daraja requires a secure, internet-facing URL.
+| Sim-Pesa Field | Daraja Equivalent |
+|---|---|
+| `short_code` | `BusinessShortCode` |
+| `phone_number` | `PhoneNumber` / `PartyA` |
+| `amount` | `Amount` |
+| `external_reference` | `AccountReference` |
+| `callback_url` | `CallBackURL` |
 
-### 4. Shortcodes and Passkeys
-Use the `BusinessShortCode` and `Lipa na M-Pesa Online Passkey` provided by Safaricom for your specific environment.
+### 3. Authentication
+Sim-Pesa uses a simplified Bearer token. Daraja requires a full OAuth2 flow using a `Consumer Key` and `Consumer Secret` to generate a `Password` (Base64 encoded string of `ShortCode + PassKey + Timestamp`).
 
-## What to Watch Out For
+### 4. Callback URL Accessibility
+While Sim-Pesa can reach `http://host.docker.internal`, Daraja requires a publicly accessible **HTTPS** endpoint with a valid SSL certificate.
 
-- **Timeouts**: Sim-Pesa's default timeout is 60 seconds. Daraja's timeout might vary slightly based on network conditions.
-- **Error Codes**: While Sim-Pesa covers the most common `ResultCodes`, Daraja has a wider range of obscure error codes related to network failures or specific M-Pesa account states.
-- **SSL/TLS**: Daraja requires modern TLS versions. Ensure your server's SSL certificate is valid.
+## Pre-Production Checklist
 
-## Important Note
-**Sim-Pesa is not an official Safaricom product.** It is a community-driven tool designed to improve developer experience. Always perform final testing in the Daraja Sandbox and Production environments before going live.
+1.  **Switch Endpoints**: Update all API URLs to the Daraja Sandbox.
+2.  **Update Field Names**: Map your internal models to Daraja's required field names (e.g., `BusinessShortCode`).
+3.  **Implement Passkey Logic**: Ensure your code correctly generates the M-Pesa `Password` and `Timestamp`.
+4.  **Verify Webhook Security**: Implement IP whitelisting or signature verification for incoming Daraja callbacks.
+
+::: tip
+Always perform a full test cycle in the official Daraja Sandbox after transitioning from Sim-Pesa. Sim-Pesa ensures your logic is sound, but the Sandbox ensures your credentials and network configuration are correct.
+:::
