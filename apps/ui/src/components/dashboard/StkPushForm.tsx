@@ -15,7 +15,7 @@ interface StkPushFormProps {
 
 const StkPushForm = ({ authToken, onAuthError }: StkPushFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("254712345678");
+  const [phoneNumber, setPhoneNumber] = useState("254700000000");
   const [amount, setAmount] = useState("10");
   const [externalReference, setExternalReference] = useState("Order_001");
   const [isSending, setIsSending] = useState(false);
@@ -23,7 +23,7 @@ const StkPushForm = ({ authToken, onAuthError }: StkPushFormProps) => {
   const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
-    setPhoneNumber("254712345678");
+    setPhoneNumber("254700000000");
     setAmount("10");
     setExternalReference("Order_001");
     setResponse(null);

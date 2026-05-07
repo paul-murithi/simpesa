@@ -2,6 +2,7 @@ import {
   ExternalServiceError,
   NotFoundError,
   UnauthorizedError,
+  ValidationError,
 } from "@app/utils";
 import { redisClient } from "../lib/redisClient.js";
 import { AuthRepository } from "@app/db";
@@ -32,12 +33,23 @@ export class AuthService {
     const passKey =
       "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
 
-    await repo.createMerchant({
-      short_code: data.shortCode,
-      pass_key: passKey,
-      callback_url: data.callbackUrl,
-      balance: 1000000,
-    });
+    try {
+      await repo.createMerchant({
+        short_code: data.shortCode,
+        pass_key: passKey,
+        callback_url: data.callbackUrl,
+        balance: 1000000,
+      });
+    } catch (error: any) {
+      // Postgres check constraint violation
+      if (error.code === "23514") {
+        throw new ValidationError(
+          "Invalid Callback URL. Ensure it starts with http:// or https:// and is a valid format.",
+          "Check the CHECK constraint in the merchants table.",
+        );
+      }
+      throw error;
+    }
 
     try {
       await repo.createUser({
