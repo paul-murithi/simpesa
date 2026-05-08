@@ -12,7 +12,7 @@ export const getApiUrl = (path: string) => {
       return path;
     }
 
-    return `${window.location.protocol}//${window.location.hostname}:3000${path}`;
+    return `${window.location.protocol}//${window.location.hostname}:33000${path}`;
   }
 
   return `${normalizeBaseUrl(configuredBaseUrl)}${path}`;

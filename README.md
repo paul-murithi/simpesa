@@ -1,6 +1,8 @@
 # Sim-Pesa
 
-Sim-Pesa is a production-grade, local-first M-Pesa API simulator. It provides a robust environment for testing STK Push (Lipa na M-Pesa Online) integrations without the instability or costs associated with the Safaricom Daraja sandbox.
+Sim-Pesa is a production-grade, local-first M-Pesa API simulator. It provides a robust, zero-config "appliance" for testing STK Push (Lipa na M-Pesa Online) integrations without the instability or costs associated with the Safaricom Daraja sandbox.
+
+Sim-Pesa is designed to coexist safely with your existing development stack by using uncommon host ports (33000+) and keeping internal databases isolated.
 
 ## 1. Overview
 
@@ -8,7 +10,8 @@ Sim-Pesa simulates the entire lifecycle of an STK Push transaction. It includes 
 
 **Key Features:**
 
-- **Local-first:** Run the entire stack on your machine via Docker.
+- **Zero-Config Appliance:** Run the entire stack with a single command. No `.env` files required.
+- **Safe Coexistence:** Uses uncommon host ports (33000+) to avoid conflicts with your local database or web servers.
 - **Queue-based Architecture:** Uses BullMQ (Redis) for reliable transaction and webhook processing.
 - **Virtual Smartphone UI:** A dedicated interface to simulate user interaction (PIN entry/cancellation).
 - **Webhook Callbacks:** Reliable callback system with exponential backoff retries.
@@ -20,8 +23,8 @@ Sim-Pesa follows a microservices-inspired architecture:
 
 - **API (Ingestion):** Handles incoming STK Push requests, authentication, and transaction initiation.
 - **Worker:** Processes business logic (balance checks, state transitions) and waits for user interaction via Redis Pub/Sub.
-- **PostgreSQL:** Stores persistent data for merchants, users, and transactions.
-- **Redis:** Serves as the message broker for BullMQ and handles real-time signaling between the API and Worker.
+- **PostgreSQL (Internal):** Stores persistent data. Not exposed to the host machine to avoid port conflicts.
+- **Redis (Internal):** Message broker for BullMQ and real-time signaling. Not exposed to the host machine.
 - **React Dashboard:** Provides a "God-view" of all transactions and a virtual smartphone interface for simulation.
 
 **Transaction Flow:**
@@ -89,18 +92,18 @@ After a transaction reaches a terminal state, a webhook job is enqueued:
 
 ### Services & Ports
 
-| Service        | External Port | Description                |
+| Service        | Host Port | Description                |
 | :------------- | :------------ | :------------------------- |
-| **API**        | `3000`        | Ingestion & Auth endpoints |
-| **UI**         | `5173`        | Dashboard & Virtual Phone  |
-| **PostgreSQL** | `5432`        | Main database              |
-| **Redis**      | `6379`        | Queue & Signaling          |
+| **UI**         | `35173`       | Dashboard & Virtual Phone  |
+| **API**        | `33000`       | Ingestion & Auth endpoints |
+| **PostgreSQL** | _None_        | Internal only (safe)       |
+| **Redis**      | _None_        | Internal only (safe)       |
 
 ## 5. First Run (Onboarding Flow)
 
 When you first launch Sim-Pesa, you need to register a Merchant to obtain credentials.
 
-1. Navigate to `http://localhost:5173/` (or use the API).
+1. Navigate to `http://localhost:35173/` (or use the API).
 2. Register your merchant `short_code` and `callback_url`.
 3. The system comes pre-seeded with a default test user (if `seed-dev-data.sql` is applied) or you can manage users via the DB.
 
@@ -108,7 +111,7 @@ When you first launch Sim-Pesa, you need to register a Merchant to obtain creden
 
 ### Step 1: Trigger STK Push
 
-Send a POST request to `http://localhost:3000/stkpush/v1/processrequest`.
+Send a POST request to `http://localhost:33000/stkpush/v1/processrequest`.
 (Requires an Authorization token from `/oauth/v1/generate`).
 
 **Request Example:**
@@ -131,7 +134,7 @@ Send a POST request to `http://localhost:3000/stkpush/v1/processrequest`.
 
 ### Step 2: Approve via UI
 
-1. Open the Dashboard at `http://localhost:5173`.
+1. Open the Dashboard at `http://localhost:35173`.
 2. Locate the "PENDING" transaction in the list.
 3. Use the **Virtual Smartphone** component to enter the PIN (Default: `1234` for test users).
 4. Click **Submit**.
@@ -199,7 +202,8 @@ The webhook system mimics Daraja's JSON structure:
 
 ## 11. Troubleshooting
 
-- **Port 5432/6379 Busy:** Ensure no local Postgres or Redis instances are running.
+- **Port 35173/33000 Busy:** While unlikely, ensure these uncommon ports aren't being used by other specialized software.
+- **Cannot connect to Postgres/Redis:** These services are intentionally not exposed to your host machine to prevent conflicts with your own local databases. They are only accessible by other Sim-Pesa services within the Docker network.
 - **Worker Not Processing:** Check Redis connection logs in `docker compose logs worker`.
 - **Database Not Initialized:** Check `docker compose logs db` for migration errors.
 

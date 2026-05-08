@@ -51,7 +51,7 @@ Sim-Pesa is a local-first, containerized drop-in replacement for the Daraja sand
 
 The fastest way to trigger your first simulated STK Push is via the Dashboard:
 
-1.  Open [http://localhost:5173](http://localhost:5173) and complete the 5-second setup wizard.
+1.  Open [http://localhost:35173](http://localhost:35173) and complete the 5-second setup wizard.
 2.  In the **Initiate STK Push** panel, enter an amount and click **Send Request**.
 3.  Watch the transaction appear in the live feed.
 4.  Approve it on the **Virtual Smartphone**.
@@ -61,7 +61,7 @@ The fastest way to trigger your first simulated STK Push is via the Dashboard:
 If you prefer using the command line, first copy your **Bearer Token** from the dashboard top bar, then run:
 
 ```bash
-curl -X POST http://localhost:3000/stkpush/v1/processrequest \
+curl -X POST http://localhost:33000/stkpush/v1/processrequest \
 -H "Authorization: Bearer <your-token>" \
 -H "Content-Type: application/json" \
 -d '{

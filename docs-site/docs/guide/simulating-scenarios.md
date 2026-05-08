@@ -8,7 +8,7 @@ Use these walkthroughs to verify that your application handles every possible M-
 
 1.  **Trigger**: Send a valid STK Push request.
     ```bash
-    curl -X POST http://localhost:3000/stkpush/v1/processrequest \
+    curl -X POST http://localhost:33000/stkpush/v1/processrequest \
     -H "Authorization: Bearer test-token" \
     -H "Content-Type: application/json" \
     -d '{

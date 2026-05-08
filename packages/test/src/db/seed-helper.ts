@@ -14,6 +14,6 @@ export async function seedUsers() {
 export async function seedMerchant() {
   await Query(`
     INSERT INTO merchants (short_code, pass_key, callback_url, balance)
-    VALUES ('174379', 'pass_key123', 'http://localhost:3000/callback', 0.00)
+    VALUES ('174379', 'pass_key123', 'http://api:3000/callback', 0.00)
   `);
 }
