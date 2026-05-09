@@ -35,6 +35,9 @@ redisSubscriber.on("error", (err: Error) =>
   console.error("[Redis Subscriber] Error:", err),
 );
 
+/**
+ * Connects all Redis clients (main, publisher, and subscriber) to the Redis server.
+ */
 export const connectRedis = async () => {
   if (!redisClient.isOpen) {
     await redisClient.connect();
@@ -48,6 +51,11 @@ export const connectRedis = async () => {
   }
 };
 
+/**
+ * Gracefully closes all Redis client connections.
+ *
+ * @async
+ */
 export const closeRedis = async () => {
   if (redisClient.isOpen) {
     logger.info("[Redis] Closing connection...");
@@ -61,6 +69,11 @@ export const closeRedis = async () => {
   }
 };
 
+/**
+ * Publishes a transaction update to the 'transactions:updates' channel.
+ *
+ * @async
+ */
 export const publishTransactionUpdate = async (transaction: any) => {
   if (!redisPublisher.isOpen) {
     await redisPublisher.connect();

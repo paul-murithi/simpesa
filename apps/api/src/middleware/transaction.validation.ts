@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/**
+ * Zod schema for validating STK Push transaction requests.
+ * Ensures the presence and correct format of short_code, phone_number,
+ * amount, external_reference, and callback_url.
+ */
 export const createTransactionSchema = z.object({
   short_code: z.string().min(5, "Short code must be at least 5 digits"),
   phone_number: z

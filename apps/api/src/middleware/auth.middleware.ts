@@ -5,6 +5,13 @@ import type { AuthenticatedRequest } from "@app/types";
 
 const service = new AuthService();
 
+/**
+ * Middleware that authenticates requests using a Bearer token.
+ * Validates the token against Redis and attaches the merchantId to the request object.
+ *
+ * @async
+ * @throws {UnauthorizedError} If the token is missing, invalid, or expired.
+ */
 export const authMiddleware = async (
   req: Request,
   res: Response,

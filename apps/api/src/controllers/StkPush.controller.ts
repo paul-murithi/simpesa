@@ -17,6 +17,15 @@ import { NotFoundError } from "@app/utils";
 const service = new StkPushService();
 const util = new TransactionUtils();
 
+/**
+ * Initiates an STK Push transaction.
+ * Validates the request, prevents duplicate submissions using Redis locks,
+ * records the transaction in the database, and enqueues it for the worker.
+ *
+ * @async
+ * @throws {ConflictError} If a duplicate transaction is detected.
+ * @throws {ExternalServiceError} If database insertion or queueing fails.
+ */
 export const processRequest: RequestHandler<
   any,
   StkPushResponse,
@@ -114,6 +123,14 @@ export const processRequest: RequestHandler<
   return res.status(200).json(acknowledgement);
 };
 
+/**
+ * Verifies the PIN submitted for an active STK Push transaction.
+ * Checks the transaction state, validates the PIN against the user's stored PIN,
+ * and publishes a signal to Redis to notify the waiting worker.
+ *
+ * @async
+ * @throws {NotFoundError} If the transaction or user is not found.
+ */
 export const verifyPin: RequestHandler = async (req, res) => {
   const { checkout_id } = req.params;
   const { pin } = req.body;
@@ -163,6 +180,12 @@ export const verifyPin: RequestHandler = async (req, res) => {
   return res.status(200).json({ ok: true });
 };
 
+/**
+ * Cancels an active STK Push transaction.
+ * Publishes a 'CANCELLED' signal to Redis to notify the waiting worker.
+ *
+ * @async
+ */
 export const cancelTransaction: RequestHandler = async (req, res) => {
   const { checkout_id } = req.params;
 

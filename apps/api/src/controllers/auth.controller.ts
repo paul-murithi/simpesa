@@ -7,6 +7,15 @@ import { AuthUtils } from "../utils/auth.utils.js";
 const service = new AuthService();
 const utils = new AuthUtils();
 
+/**
+ * Handles merchant authentication and token generation.
+ * Validates the merchant's short code and passkey, then returns an existing
+ * or newly generated authentication token.
+ *
+ * @async
+ * @throws {NotFoundError} If the merchant with the provided short code is not found.
+ * @throws {UnauthorizedError} If the provided passkey is incorrect.
+ */
 export async function authController(
   req: Request<{}, {}, AuthBody>,
   res: Response,

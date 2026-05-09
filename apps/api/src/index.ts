@@ -8,6 +8,13 @@ import { AuthUtils } from "./utils/auth.utils.js";
 
 const PORT = process.env.PORT || 3000;
 
+/**
+ * Initializes and starts the API server.
+ * Connects to Redis, runs database migrations, checks for first-run status,
+ * pre-generates an auth token for the default test merchant, and starts the Express app.
+ *
+ * @async
+ */
 async function startServer() {
   try {
     await connectRedis();
@@ -44,7 +51,10 @@ async function startServer() {
     });
   } catch (error: any) {
     if (error instanceof AggregateError) {
-      logger.error({ errors: error.errors }, "Failed to start server: AggregateError");
+      logger.error(
+        { errors: error.errors },
+        "Failed to start server: AggregateError",
+      );
     } else {
       logger.error(error, "Failed to start server");
     }

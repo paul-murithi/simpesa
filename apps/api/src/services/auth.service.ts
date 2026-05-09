@@ -12,23 +12,48 @@ import { AuthUtils } from "../utils/auth.utils.js";
 const repo = new AuthRepository();
 const utils = new AuthUtils();
 
+/**
+ * Service for handling merchant authentication, registration, and token management.
+ */
 export class AuthService {
   private static isFirstRun = true;
 
+  /**
+   * Sets the global first-run status of the appliance.
+   *
+   * @static
+   */
   static async setFirstRunStatus(status: boolean) {
     this.isFirstRun = status;
   }
 
+  /**
+   * Gets the current global first-run status.
+   *
+   * @static
+   */
   static getFirstRunStatus() {
     return this.isFirstRun;
   }
 
+  /**
+   * Checks the database to determine if this is the first time the appliance is running.
+   * Updates the global status accordingly.
+   *
+   * @async
+   */
   async checkFirstRun(): Promise<boolean> {
     const count = await repo.countMerchants();
     AuthService.setFirstRunStatus(count === 0);
     return AuthService.getFirstRunStatus();
   }
 
+  /**
+   * Registers a new merchant and seeds a default test user.
+   *
+   * @async
+   * @throws {ValidationError} If the callback URL format is invalid.
+   */
   async registerMerchant(data: { shortCode: string; callbackUrl: string }) {
     const passKey =
       "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919";
@@ -68,11 +93,22 @@ export class AuthService {
     AuthService.setFirstRunStatus(false);
   }
 
+  /**
+   * Retrieves a merchant ID from Redis using an authentication token.
+   *
+   * @async
+   */
   async getMerchantFromToken(token: string) {
     if (!token) return null;
     return await redisClient.get(`auth:token:${token.trim()}`);
   }
 
+  /**
+   * Extracts the Bearer token from the 'Authorization' header.
+   *
+   * @param {string|undefined} header - The raw 'Authorization' header value.
+   * @throws {UnauthorizedError} If the header is missing or the format is invalid.
+   */
   getTokenFromHeader(header: string | undefined) {
     if (!header) {
       throw new UnauthorizedError("Missing Authorization header");
@@ -87,6 +123,12 @@ export class AuthService {
     return parts[1];
   }
 
+  /**
+   * Retrieves a merchant's details from the database using their short code.
+   *
+   * @async
+   * @throws {NotFoundError} If the merchant is not found.
+   */
   async getMerchant(short_code: string): Promise<Merchant> {
     const merchantResult = await repo.findMerchantByShortCode(short_code);
     if (merchantResult.rowCount === 0) {
@@ -98,11 +140,21 @@ export class AuthService {
     return merchant;
   }
 
-  // TODO: Add Zod validation
+  /**
+   * Validates an authentication request body.
+   * (Placeholder for future implementation)
+   *
+   * @async
+   */
   async validateAuthRequest(data: AuthBody) {
     return {};
   }
 
+  /**
+   * Checks if the provided passkey matches the merchant's stored passkey.
+   *
+   * @async
+   */
   async passKeyMatches(passkey: string, merchant: Merchant): Promise<boolean> {
     const { pass_key: dbPasskey } = merchant;
 
@@ -111,10 +163,22 @@ export class AuthService {
     return passkey === dbPasskey;
   }
 
+  /**
+   * Retrieves an existing token for a merchant from Redis.
+   *
+   * @async
+   */
   async getMerchantToken(merchantId: string): Promise<string | null> {
     return await redisClient.get(`auth:merchant:${merchantId}`);
   }
 
+  /**
+   * Saves an authentication token to Redis with a TTL of 1 hour.
+   * Uses a Lua script to ensure atomicity and handle old token cleanup.
+   *
+   * @async
+   * @throws {ExternalServiceError} If the Redis operation fails.
+   */
   async saveTokenToRedis(token: string, merchantId: string) {
     const script = `
     local ttl = ARGV[3]

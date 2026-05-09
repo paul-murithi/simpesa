@@ -60,6 +60,14 @@ app.use("/api/v1/onboarding", onboardingRoute);
 app.use("/stkpush", stkRoute);
 
 // Callback mock route
+/**
+ * Mock callback endpoint for testing webhook delivery locally.
+ * Logs the received payload and returns a success response.
+ * Can be forced to fail by adding '?fail=true' to the URL.
+ *
+ * @name post/callback
+ * @function
+ */
 app.post("/callback", (req, res) => {
   const shouldFail = req.query.fail === "true";
 

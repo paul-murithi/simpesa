@@ -6,6 +6,11 @@ import { redisSubscriber } from "../lib/redisClient.js";
 const transactionRepository = new TransactionRepository();
 const TRANSACTIONS_STREAM_CHANNEL = "transactions:updates";
 
+/**
+ * Fetches a list of the 50 most recent transactions.
+ *
+ * @async
+ */
 export const getTransactionsController: RequestHandler = async (_req, res) => {
   try {
     const transactions = await transactionRepository.listRecentTransactions(50);
@@ -17,6 +22,10 @@ export const getTransactionsController: RequestHandler = async (_req, res) => {
   }
 };
 
+/**
+ * Establishes a Server-Sent Events (SSE) stream for real-time transaction updates.
+ * Subscribes to the Redis 'transactions:updates' channel and forwards messages to the client.
+ */
 export const streamTransactionsController: RequestHandler = (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
