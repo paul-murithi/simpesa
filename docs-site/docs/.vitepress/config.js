@@ -5,6 +5,9 @@ export default withMermaid(
   defineConfig({
     title: 'Sim-Pesa',
     description: 'Local-first M-Pesa STK Push simulator. Run the full Daraja payment flow on localhost with Docker.',
+    ignoreDeadLinks: [
+      /^https?:\/\/localhost/,
+    ],
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/guide/quickstart' },
