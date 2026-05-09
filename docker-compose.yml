@@ -35,9 +35,9 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: simpesa-api
     ports:
-      - "33000:3000"
+      - "${API_HOST_PORT:-33000}:${API_PORT:-3000}"
     environment:
-      PORT: ${PORT:-3000}
+      PORT: ${API_PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
       REDIS_HOST: ${REDIS_HOST:-redis}
@@ -69,7 +69,7 @@ services:
       dockerfile: apps/ui/Dockerfile
     container_name: simpesa-ui
     ports:
-      - "35173:80"
+      - "${UI_HOST_PORT:-35173}:80"
     depends_on:
       api: { condition: service_started }
 

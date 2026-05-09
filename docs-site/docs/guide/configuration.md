@@ -8,7 +8,8 @@ Sim-Pesa is designed to work with zero configuration changes on first run. All d
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3000` | Port the Ingestion API listens on inside the container |
+| `API_PORT` | `3000` | Port the Ingestion API listens on inside the container |
+| `API_HOST_PORT` | `33000` | Port exposed on your host machine for the API |
 | `DATABASE_URL` | `postgresql://simpesa:simpesa@db:5432/simpesa` | PostgreSQL connection string |
 | `REDIS_HOST` | `redis` | Redis hostname |
 | `REDIS_PORT` | `6379` | Redis port |
@@ -28,18 +29,25 @@ Sim-Pesa is designed to work with zero configuration changes on first run. All d
 
 | Variable | Default | Description |
 |---|---|---|
+| `UI_HOST_PORT` | `35173` | Port exposed on your host machine for the Dashboard |
 | `VITE_API_BASE_URL` | `http://localhost:33000` | API URL the dashboard connects to from your browser |
 
 ---
 
 ## Changing ports
 
-To run the API on a different host port (e.g., `5000`), update the `ports` section of the `api` service in `docker-compose.yml`:
+To run the API on a different host port (e.g., `5000`), update `API_HOST_PORT` in your `.env` file:
+
+```bash
+API_HOST_PORT=5000
+```
+
+Alternatively, you can update the `ports` section of the `api` service in `docker-compose.yml`:
 
 ```yaml
 api:
   ports:
-    - "5000:3000"  # Maps host port 5000 to container port 3000
+    - "5000:${API_PORT:-3000}"  # Maps host port 5000 to internal port
 ```
 
 Then update `VITE_API_BASE_URL` in the dashboard service (if it's not using the proxy) to match:
