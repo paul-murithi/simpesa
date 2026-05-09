@@ -7,19 +7,19 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:33000",
         changeOrigin: true,
       },
       "/stkpush": {
-        target: "http://localhost:3000",
+        target: "http://localhost:33000",
         changeOrigin: true,
       },
       "/oauth": {
-        target: "http://localhost:3000",
+        target: "http://localhost:33000",
         changeOrigin: true,
       },
       "/health": {
-        target: "http://localhost:3000",
+        target: "http://localhost:33000",
         changeOrigin: true,
       },
     },

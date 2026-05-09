@@ -2,12 +2,14 @@ services:
   db:
     image: postgres:16
     container_name: simpesa-db
-    env_file:
-      - .env.docker
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-simpesa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-simpesa}
+      POSTGRES_DB: ${POSTGRES_DB:-simpesa}
     volumes:
       - simpesa_db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
       interval: 5s
@@ -19,8 +21,8 @@ services:
     container_name: simpesa-redis
     volumes:
       - simpesa_redis_data:/data
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -33,9 +35,14 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: simpesa-api
     ports:
-      - "3000:3000"
-    env_file:
-      - .env.docker
+      - "33000:3000"
+    environment:
+      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:35173,http://127.0.0.1:35173}
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -45,8 +52,13 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
     container_name: simpesa-worker
-    env_file:
-      - .env.docker
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      PROCESSING_VISIBILITY_DELAY_MS: ${PROCESSING_VISIBILITY_DELAY_MS:-5000}
+      PIN_TIMEOUT_MS: ${PIN_TIMEOUT_MS:-60000}
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -57,7 +69,7 @@ services:
       dockerfile: apps/ui/Dockerfile
     container_name: simpesa-ui
     ports:
-      - "5173:80"
+      - "35173:80"
     depends_on:
       api: { condition: service_started }
 

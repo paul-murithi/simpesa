@@ -9,31 +9,32 @@ Sim-Pesa is designed to work with zero configuration changes on first run. All d
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3000` | Port the Ingestion API listens on inside the container |
-| `DATABASE_URL` | `postgres://...` | PostgreSQL connection string |
-| `REDIS_URL` | `redis://redis:6379` | Redis connection string |
-| `LOG_LEVEL` | `info` | Logging verbosity: `debug`, `info`, `warn`, `error` |
+| `DATABASE_URL` | `postgresql://simpesa:simpesa@db:5432/simpesa` | PostgreSQL connection string |
+| `REDIS_HOST` | `redis` | Redis hostname |
+| `REDIS_PORT` | `6379` | Redis port |
+| `CORS_ORIGINS` | `http://localhost:35173,http://127.0.0.1:35173` | Allowed origins for CORS |
 
 ### Worker Service (`worker`)
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | `postgres://...` | PostgreSQL connection string |
-| `REDIS_URL` | `redis://redis:6379` | Redis connection string |
-| `WEBHOOK_TIMEOUT_MS` | `5000` | Milliseconds before a webhook delivery attempt times out |
-| `WEBHOOK_MAX_RETRIES` | `5` | Maximum retry attempts for failed webhook delivery |
+| `DATABASE_URL` | `postgresql://simpesa:simpesa@db:5432/simpesa` | PostgreSQL connection string |
+| `REDIS_HOST` | `redis` | Redis hostname |
+| `REDIS_PORT` | `6379` | Redis port |
+| `PROCESSING_VISIBILITY_DELAY_MS` | `5000` | Delay before a transaction becomes visible for processing |
 | `PIN_TIMEOUT_MS` | `60000` | Milliseconds to wait for a user PIN before timing out (Error 1037) |
 
 ### Dashboard Service (`ui`)
 
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_API_URL` | `http://localhost:3000` | API URL the dashboard connects to from your browser |
+| `VITE_API_BASE_URL` | `http://localhost:33000` | API URL the dashboard connects to from your browser |
 
 ---
 
 ## Changing ports
 
-To run the API on a different port (e.g., `5000`), update the `ports` section of the `api` service in `docker-compose.yml`:
+To run the API on a different host port (e.g., `5000`), update the `ports` section of the `api` service in `docker-compose.yml`:
 
 ```yaml
 api:
@@ -41,12 +42,24 @@ api:
     - "5000:3000"  # Maps host port 5000 to container port 3000
 ```
 
-Then update `VITE_API_URL` in the dashboard service (if it's not using the proxy) to match:
+Then update `VITE_API_BASE_URL` in the dashboard service (if it's not using the proxy) to match:
 
 ```yaml
 ui:
   environment:
-    VITE_API_URL: http://localhost:5000
+    VITE_API_BASE_URL: http://localhost:5000
+```
+
+## Internal Services (Postgres & Redis)
+
+By default, Sim-Pesa does **not** expose PostgreSQL (5432) or Redis (6379) to your host machine. This is an intentional design choice to ensure Sim-Pesa can coexist with any local databases you might already be running.
+
+If you absolutely need to access the internal database from your host (e.g., via TablePlus or psql), you can manually add the port mapping back to `docker-compose.yml`:
+
+```yaml
+db:
+  ports:
+    - "5432:5432"
 ```
 
 ---

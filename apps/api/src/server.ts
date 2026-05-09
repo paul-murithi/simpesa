@@ -13,10 +13,10 @@ import onboardingRoute from "./routes/onboarding.route.js";
 const app = express();
 
 const defaultAllowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:4173",
-  "http://127.0.0.1:4173",
+  "http://localhost:35173",
+  "http://127.0.0.1:35173",
+  "http://localhost:34173",
+  "http://127.0.0.1:34173",
 ];
 
 const allowedOrigins = (

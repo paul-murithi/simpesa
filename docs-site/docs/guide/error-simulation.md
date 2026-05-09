@@ -77,7 +77,7 @@ To simulate concurrent requests:
 ```bash
 # Fire 5 concurrent requests to the same phone number
 for i in {1..5}; do
-  curl -s -X POST http://localhost:3000/stkpush/v1/processrequest \
+  curl -s -X POST http://localhost:33000/stkpush/v1/processrequest \
     -H "Authorization: Bearer test-token" \
     -H "Content-Type: application/json" \
     -d '{
@@ -104,7 +104,7 @@ For load testing or CI/CD pipelines where manual PIN entry isn't practical, enab
 - The balance deduction and webhook dispatch happen without manual intervention.
 - The Virtual Smartphone panel is hidden.
 
-To enable: toggle the **Auto-Approve** switch in the dashboard header at [http://localhost:5173](http://localhost:5173).
+To enable: toggle the **Auto-Approve** switch in the dashboard header at [http://localhost:35173](http://localhost:35173).
 
 ::: warning
 Auto-Approve is designed for automated testing only. It bypasses the PIN verification step, which means your PIN validation logic is not exercised in this mode.

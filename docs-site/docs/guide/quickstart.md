@@ -24,10 +24,10 @@ This starts five services on your machine:
 
 | Service | URL | Purpose |
 |---|---|---|
-| Dashboard | http://localhost:5173 | Setup wizard + transaction monitor |
-| Ingestion API | http://localhost:3000 | STK Push endpoint |
-| PostgreSQL | localhost:5432 | Transaction database |
-| Redis | localhost:6379 | Job queue |
+| Dashboard | http://localhost:35173 | Setup wizard + transaction monitor |
+| Ingestion API | http://localhost:33000 | STK Push endpoint |
+| PostgreSQL | (internal) | Transaction database |
+| Redis | (internal) | Job queue |
 | Worker | (internal) | Transaction processor |
 
 Wait about 10-15 seconds for all services to report healthy. Check with:
@@ -42,7 +42,7 @@ All five services should show `running` or `healthy`.
 
 ## Step 2: Run the setup wizard
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:35173](http://localhost:35173) in your browser.
 
 If this is your first run, the dashboard redirects you to the **Appliance Setup Wizard**. You'll see two fields:
 
@@ -66,12 +66,12 @@ To interact with the API, you need an OAuth token.
 If you initiate a request directly from the **Initiate STK Push** form in the dashboard, the token is automatically refreshed and attached to the request header for you. You don't need to worry about manual authentication.
 
 ### Option B: Via curl
-If you want to test from your own application or terminal, copy the **Bearer Token** from the top navigation bar of the dashboard at [http://localhost:5173](http://localhost:5173).
+If you want to test from your own application or terminal, copy the **Bearer Token** from the top navigation bar of the dashboard at [http://localhost:35173](http://localhost:35173).
 
 Alternatively, fire a request to the simulated auth service:
 
 ```bash
-curl -X POST http://localhost:3000/oauth/v1/generate \
+curl -X POST http://localhost:33000/oauth/v1/generate \
 -H "Content-Type: application/json" \
 -d '{
   "short_code": "174379",
@@ -82,7 +82,7 @@ curl -X POST http://localhost:3000/oauth/v1/generate \
 Once you have your token, trigger the STK Push:
 
 ```bash
-curl -X POST http://localhost:3000/stkpush/v1/processrequest \
+curl -X POST http://localhost:33000/stkpush/v1/processrequest \
 -H "Authorization: Bearer <your-token>" \
 -H "Content-Type: application/json" \
 -d '{
@@ -109,7 +109,7 @@ You'll get a response in under 100ms:
 
 ## Step 4: Approve the payment
 
-Switch back to [http://localhost:5173](http://localhost:5173). You'll see:
+Switch back to [http://localhost:35173](http://localhost:35173). You'll see:
 1.  The transaction appear in the feed with status **PROCESSING**.
 2.  The **Virtual Smartphone** panel showing an STK Push prompt (unless **Auto-Approve PIN** is toggled on in the top bar).
 

@@ -156,9 +156,9 @@ Services reference each other by Docker service name -- no hardcoded IP addresse
 
 ```yaml
 # Worker service environment (from docker-compose.yml)
-DATABASE_URL: postgres://simpesa:simpesa@db:5432/simpesa
-REDIS_URL:    redis://redis:6379
-API_URL:      http://api:3000
+DATABASE_URL: postgresql://simpesa:simpesa@db:5432/simpesa
+REDIS_HOST:   redis
+REDIS_PORT:   6379
 ```
 
 The Docker bridge network `simpesa_default` handles DNS resolution automatically. Service names (`api`, `worker`, `db`, `redis`, `ui`) are the hostnames.
@@ -167,10 +167,10 @@ The Docker bridge network `simpesa_default` handles DNS resolution automatically
 
 | Service | Host URL |
 |---|---|
-| Dashboard | http://localhost:5173 |
-| Ingestion API | http://localhost:3000 |
-| PostgreSQL | localhost:5432 |
-| Redis | localhost:6379 |
+| Dashboard | http://localhost:35173 |
+| Ingestion API | http://localhost:33000 |
+| PostgreSQL | _Internal only_ |
+| Redis | _Internal only_ |
 
 **Important:** When your `CallBackURL` points to a server on your host machine, use `host.docker.internal` instead of `localhost`:
 `"CallBackURL": "http://host.docker.internal:8080/callback"`

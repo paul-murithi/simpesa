@@ -6,8 +6,9 @@ Resolve common issues encountered when running Sim-Pesa locally.
 
 **Symptoms**: `docker compose up` exits with an error or services show `restarting` in `docker compose ps`.
 
-- **Port Conflict**: Ports 3000 (API), 5173 (Dashboard), 5432 (Postgres), or 6379 (Redis) are already in use.
-  - **Fix**: Stop the conflicting local service or change the port mapping in `docker-compose.yml`.
+- **Port Conflict**: Ports 33000 (API) or 35173 (Dashboard) are already in use.
+  - **Fix**: While these ports are uncommon, they might be in use by specialized software. You can change them in `docker-compose.yml`. See [Changing Ports](/guide/configuration#changing-ports).
+- **Cannot connect to Postgres or Redis**: These services are intentionally **not exposed** to your host machine. They are only accessible by other Sim-Pesa services within the Docker network. If you must access them from the host, see [Configuration -> Internal Services](/guide/configuration#internal-services-postgres-redis).
 - **Docker Engine not running**: Ensure Docker Desktop or the Docker daemon is active.
 - **Insufficient Permissions**: On Linux, you may need `sudo` for `docker compose` if your user isn't in the `docker` group.
 
@@ -27,7 +28,7 @@ Resolve common issues encountered when running Sim-Pesa locally.
 
 **Symptoms**: API returns a 404 error when triggering an STK Push.
 
-- **Fix**: You must complete the **Appliance Setup Wizard** on first run. Open [http://localhost:5173](http://localhost:5173) and follow the prompts to register your ShortCode (e.g., `174379`).
+- **Fix**: You must complete the **Appliance Setup Wizard** on first run. Open [http://localhost:35173](http://localhost:35173) and follow the prompts to register your ShortCode (e.g., `174379`).
 
 ## Duplicate transaction rejected
 
