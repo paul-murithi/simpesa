@@ -42,8 +42,12 @@ async function startServer() {
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
     });
-  } catch (error) {
-    logger.error("Failed to start server:" + error);
+  } catch (error: any) {
+    if (error instanceof AggregateError) {
+      logger.error({ errors: error.errors }, "Failed to start server: AggregateError");
+    } else {
+      logger.error(error, "Failed to start server");
+    }
     process.exit(1);
   }
 }
