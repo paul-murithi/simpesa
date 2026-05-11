@@ -37,7 +37,7 @@ app.use(
 
       return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Origin",
       "X-Requested-With",
