@@ -87,6 +87,9 @@ export class TransactionService {
 
     await this.publish(checkout_id);
 
+    // Keep PROCESSING visible long enough for dashboard SSE subscribers.
+    await wait(PROCESSING_VISIBILITY_DELAY_MS);
+
     // Wait for PIN signal from Redis
     const pinResult = await pinPromise;
 
