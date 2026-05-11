@@ -93,11 +93,11 @@ After a transaction reaches a terminal state, a webhook job is enqueued:
 ### Services & Ports
 
 | Service        | Host Port | Description                |
-| :------------- | :------------ | :------------------------- |
-| **UI**         | `35173`       | Dashboard & Virtual Phone  |
-| **API**        | `33000`       | Ingestion & Auth endpoints |
-| **PostgreSQL** | _None_        | Internal only (safe)       |
-| **Redis**      | _None_        | Internal only (safe)       |
+| :------------- | :-------- | :------------------------- |
+| **UI**         | `35173`   | Dashboard & Virtual Phone  |
+| **API**        | `33000`   | Ingestion & Auth endpoints |
+| **PostgreSQL** | _None_    | Internal only (safe)       |
+| **Redis**      | _None_    | Internal only (safe)       |
 
 ## 5. First Run (Onboarding Flow)
 
@@ -118,17 +118,11 @@ Send a POST request to `http://localhost:33000/stkpush/v1/processrequest`.
 
 ```json
 {
-  "BusinessShortCode": "174379",
-  "Password": "...",
-  "Timestamp": "20231010123456",
-  "TransactionType": "CustomerPayBillOnline",
-  "Amount": 100,
-  "PartyA": "254700000000",
-  "PartyB": "174379",
-  "PhoneNumber": "254700000000",
-  "CallBackURL": "https://your-api.com/callback",
-  "AccountReference": "Order-123",
-  "TransactionDesc": "Payment for services"
+  "short_code": "174379",
+  "phone_number": "254700000000",
+  "amount": 100,
+  "external_reference": "Order-123",
+  "callback_url": "https://your-api.com/callback"
 }
 ```
 
