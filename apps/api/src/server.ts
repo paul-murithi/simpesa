@@ -9,6 +9,7 @@ import authRoute from "./routes/auth.route.js";
 import transactionsRoute from "./routes/transactions.route.js";
 import statusRoute from "./routes/status.route.js";
 import onboardingRoute from "./routes/onboarding.route.js";
+import merchantRoute from "./routes/merchant.route.js";
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/oauth/v1", authRoute);
 app.use("/api/transactions", transactionsRoute);
 app.use("/api/v1/status", statusRoute);
 app.use("/api/v1/onboarding", onboardingRoute);
+app.use("/api/v1/merchant", merchantRoute);
 app.use("/stkpush", stkRoute);
 
 // Callback mock route

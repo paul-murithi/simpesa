@@ -7,6 +7,17 @@ export class AuthRepository {
     return Query(merchantQueries.findMerchantByShortCode, [short_code]);
   }
 
+  async findMerchantById(id: string) {
+    return Query(merchantQueries.findMerchantById, [id]);
+  }
+
+  async updateMerchantCallbackUrl(short_code: string, callback_url: string) {
+    return Query(merchantQueries.updateMerchantCallbackUrl, [
+      callback_url,
+      short_code,
+    ]);
+  }
+
   async countMerchants(): Promise<number> {
     const result = await Query(merchantQueries.countMerchants);
     return result.rows[0].count;

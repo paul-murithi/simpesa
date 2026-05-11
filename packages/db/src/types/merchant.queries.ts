@@ -9,4 +9,6 @@ interface MerchantQueries {
   lockMerchantByShortCode: string;
   creditMerchant: string;
   findMerchantByShortCode: string;
+  findMerchantById: string;
+  updateMerchantCallbackUrl: string;
 }

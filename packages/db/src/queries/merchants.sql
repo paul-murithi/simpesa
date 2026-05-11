@@ -9,6 +9,9 @@ RETURNING *;
 -- name: findMerchantByShortCode
 SELECT * FROM merchants WHERE short_code = $1;
 
+-- name: findMerchantById
+SELECT * FROM merchants WHERE id = $1;
+
 -- name: creditMerchant
 UPDATE merchants
 SET balance = balance + $1
@@ -16,3 +19,9 @@ WHERE short_code = $2;
 
 -- name: lockMerchantByShortCode
 SELECT balance FROM merchants WHERE short_code = $1 FOR UPDATE;
+
+-- name: updateMerchantCallbackUrl
+UPDATE merchants
+SET callback_url = $1, updated_at = now()
+WHERE short_code = $2
+RETURNING *;

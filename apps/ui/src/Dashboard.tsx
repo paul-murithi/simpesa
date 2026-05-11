@@ -1,6 +1,7 @@
 import { useState } from "react";
 import LiveFeedPanel from "./components/dashboard/LiveFeedPanel";
 import PinModal from "./components/dashboard/PinModal";
+import MerchantConfigModal from "./components/dashboard/MerchantConfigModal";
 import Sidebar from "./components/dashboard/Sidebar";
 import CompactStatusBar from "./components/dashboard/StatsGrid";
 import StkPushForm from "./components/dashboard/StkPushForm";
@@ -32,6 +33,7 @@ const Dashboard = () => {
 
   const { token, refreshToken } = useAuth();
   const [autoApprove, setAutoApprove] = useState(true);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const { copied: copiedKey, copy } = useClipboardCopy();
 
   const apiKeyPreview = token ? `Bearer ${token}` : "Generating token...";
@@ -68,6 +70,7 @@ const Dashboard = () => {
         merchantBalance={merchantBalance}
         userBalance={userBalance}
         userStatus={userStatus}
+        onMerchantClick={() => setIsConfigModalOpen(true)}
       />
 
       <main className="dashboard-main">
@@ -103,6 +106,13 @@ const Dashboard = () => {
           checkoutId={pendingPinTx.checkout_id}
           amount={pendingPinTx.amount}
           onClose={() => setPendingPinTx(null)}
+        />
+      )}
+
+      {isConfigModalOpen && (
+        <MerchantConfigModal
+          token={token}
+          onClose={() => setIsConfigModalOpen(false)}
         />
       )}
     </div>

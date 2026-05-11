@@ -1,0 +1,10 @@
+/* MerchantConfigModal specific styles */
+.merchant-config-modal-content {
+  max-width: 400px;
+}
+
+.merchant-config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}

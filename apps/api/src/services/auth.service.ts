@@ -141,6 +141,51 @@ export class AuthService {
   }
 
   /**
+   * Retrieves a merchant's details from the database using their ID.
+   *
+   * @async
+   * @throws {NotFoundError} If the merchant is not found.
+   */
+  async getMerchantById(id: string): Promise<Merchant> {
+    const merchantResult = await repo.findMerchantById(id);
+    if (merchantResult.rowCount === 0) {
+      throw new NotFoundError(`Merchant with ID ${id} not found`);
+    }
+    return merchantResult.rows[0];
+  }
+
+  /**
+   * Updates a merchant's callback URL.
+   *
+   * @async
+   * @throws {ValidationError} If the callback URL format is invalid.
+   * @throws {NotFoundError} If the merchant is not found.
+   */
+  async updateMerchantCallbackUrl(short_code: string, callbackUrl: string) {
+    try {
+      const result = await repo.updateMerchantCallbackUrl(
+        short_code,
+        callbackUrl,
+      );
+      if (result.rowCount === 0) {
+        throw new NotFoundError(
+          `Merchant with short code ${short_code} not found`,
+        );
+      }
+      return result.rows[0];
+    } catch (error: any) {
+      // Postgres check constraint violation
+      if (error.code === "23514") {
+        throw new ValidationError(
+          "Invalid Callback URL. Ensure it starts with http:// or https:// and is a valid format.",
+          "Check the CHECK constraint in the merchants table.",
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Validates an authentication request body.
    * (Placeholder for future implementation)
    *

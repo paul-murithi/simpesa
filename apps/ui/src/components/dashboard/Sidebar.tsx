@@ -6,6 +6,7 @@ interface SidebarProps {
   merchantBalance?: string | null | undefined;
   userBalance?: string | null | undefined;
   userStatus: string;
+  onMerchantClick?: () => void;
 }
 
 const Sidebar = ({
@@ -13,6 +14,7 @@ const Sidebar = ({
   merchantBalance,
   userBalance,
   userStatus,
+  onMerchantClick,
 }: SidebarProps) => {
   return (
     <aside className="sidebar">
@@ -26,7 +28,11 @@ const Sidebar = ({
 
         <div className="sidebar-section">
           <span className="section-title">Config</span>
-          <button type="button" className="sidebar-link">
+          <button
+            type="button"
+            className="sidebar-link"
+            onClick={onMerchantClick}
+          >
             Merchant
           </button>
           <button type="button" className="sidebar-link">
