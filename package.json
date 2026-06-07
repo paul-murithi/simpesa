@@ -47,7 +47,11 @@
     "pino-http": "^11.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router": "^7.17.0",
+    "react-router-dom": "^7.17.0",
     "redis": "^5.10.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17",
     "zod": "^4.3.6"
   },
   "devDependencies": {
