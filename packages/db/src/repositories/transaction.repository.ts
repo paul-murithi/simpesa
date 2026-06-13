@@ -19,9 +19,10 @@ import {
   ConflictError,
   RESULT_CODES,
 } from "@app/utils";
-import { TRANSACTION_STATUS } from "@app/types";
+import { OutboxAggregateType, TRANSACTION_STATUS } from "@app/types";
 import { Query } from "../client.js";
 import { webhookQueries } from "../types/webhooks.queries.js";
+import { OutboxQueries } from "../types/outbox.queries.js";
 
 export class TransactionRepository {
   /**
@@ -412,17 +413,39 @@ export class TransactionRepository {
       merchant_request_id,
     } = transaction;
 
-    const request_id = (
-      await db.query(transactionQueries.ensureTransaction, [
+    // DB Client for transaction
+    const client = await db.connect();
+    let request_id = null;
+
+    try {
+      // Begin DB Transaction
+      await client.query("BEGIN");
+
+      // Insert transaction to DB
+      request_id = (
+        await client.query(transactionQueries.ensureTransaction, [
+          checkout_id,
+          external_reference,
+          short_code,
+          phone_number,
+          transactionAmount,
+          metadata,
+          merchant_request_id,
+        ])
+      ).rows[0].request_id;
+
+      // Insert event to outbox table
+      await client.query(OutboxQueries.insertIngestionOutboxEvent, [
+        OutboxAggregateType.TRANSACTION,
         checkout_id,
-        external_reference,
-        short_code,
-        phone_number,
-        transactionAmount,
-        metadata,
-        merchant_request_id,
-      ])
-    ).rows[0].request_id;
+        transaction,
+      ]);
+      await client.query("COMMIT");
+    } catch (error) {
+      client.query("ROLLBACK");
+      throw error;
+    }
+
     return request_id;
   }
 
