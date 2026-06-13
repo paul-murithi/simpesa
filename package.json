@@ -12,6 +12,7 @@
     "webpack": "^5.91.0"
   },
   "scripts": {
+    "setup": "./scripts/setup.sh",
     "dev:api": "tsx watch apps/api/src/index.ts",
     "build:api": "tsc -b apps/api && npm run copy-sql --workspace=@app/db",
     "start:api": "node dist/apps/api/index.js",

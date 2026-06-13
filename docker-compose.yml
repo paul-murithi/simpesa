@@ -4,7 +4,7 @@ services:
     container_name: simpesa-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-simpesa}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-simpesa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-simpesa_password}
       POSTGRES_DB: ${POSTGRES_DB:-simpesa}
     volumes:
       - simpesa_db_data:/var/lib/postgresql/data
@@ -39,9 +39,9 @@ services:
     environment:
       PORT: ${API_PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-simpesa}:${POSTGRES_PASSWORD:-simpesa_password}@db:5432/${POSTGRES_DB:-simpesa}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:35173,http://127.0.0.1:35173}
     depends_on:
       db: { condition: service_healthy }
@@ -54,9 +54,9 @@ services:
     container_name: simpesa-worker
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-simpesa}:${POSTGRES_PASSWORD:-simpesa_password}@db:5432/${POSTGRES_DB:-simpesa}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       PROCESSING_VISIBILITY_DELAY_MS: ${PROCESSING_VISIBILITY_DELAY_MS:-5000}
       PIN_TIMEOUT_MS: ${PIN_TIMEOUT_MS:-60000}
     depends_on:

@@ -9,27 +9,30 @@ Thank you for your interest in contributing to Sim-Pesa! This project is a monor
 - Docker & Docker Compose
 - NPM
 
-### 2. Installation
-Clone the repo and install dependencies from the root:
+### 2. Installation & Setup
+Clone the repo and run the setup script:
 ```bash
-npm install
+git clone https://github.com/paul-murithi/simpesa.git
+cd simpesa
+npm run setup
 ```
+This script will copy `.env.example` to `.env` and install all dependencies.
 
-### 3. Environment Configuration
-Copy the example environment file and adjust as needed:
-```bash
-cp .env.example .env
-```
+### 3. Running the Stack
+For local development with hot-reloading:
 
-### 4. Running the Stack
-The easiest way to develop is using Docker Compose:
+1. **Start Infrastructure**:
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d
+   ```
+2. **Start Services**:
+   ```bash
+   npm run dev
+   ```
+
+To run the entire stack in production-like containers:
 ```bash
 docker compose up -d
-```
-
-To run services in development mode (with hot-reload):
-```bash
-npm run dev
 ```
 
 ## Testing
