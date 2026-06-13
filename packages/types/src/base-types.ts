@@ -60,6 +60,13 @@ export const UserStatus = {
 } as const;
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
 
+export const OutboxAggregateType = {
+  TRANSACTION: "TRANSACTION",
+  WEBHOOK: "WEBHOOK",
+};
+export type OutboxAggregateType =
+  (typeof OutboxAggregateType)[keyof typeof OutboxAggregateType];
+
 /**Validation */
 export type ValidationResult =
   | { isValid: true; data: CreateTransactionDTO }
