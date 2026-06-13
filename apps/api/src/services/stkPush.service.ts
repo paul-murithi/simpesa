@@ -52,7 +52,10 @@ export class StkPushService {
    * @async
    * @throws {NotFoundError} If the associated merchant or user is not found.
    */
-  async insertTransaction(transaction: CreateTransactionDTO, metadata: string) {
+  async insertTransactionOutbox(
+    transaction: CreateTransactionDTO,
+    metadata: string,
+  ) {
     try {
       const request_id = await this.repo.insertNewTransaction(
         transaction,

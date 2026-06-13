@@ -67,7 +67,7 @@ export const processRequest: RequestHandler<
   // Record transaction to the DB
   let request_id = null;
   try {
-    request_id = await service.insertTransaction(
+    request_id = await service.insertTransactionOutbox(
       {
         ...validateRequest,
         checkout_id: checkOutId,
