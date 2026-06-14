@@ -18,20 +18,26 @@ COPY apps/api/ ./apps/api/
 RUN npm ci
 RUN npm run build:api
 
-# Prune dev dependencies
-RUN npm prune --omit=dev
-
 # Stage 2: Production
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Copy production node_modules from builder
-COPY --from=builder /app/node_modules ./node_modules
-# Copy built packages and app
+# Copy root package files
+COPY package*.json ./
+
+# Copy workspace package files for resolution
+COPY apps/api/package.json ./apps/api/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/queue/package.json ./packages/queue/package.json
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/utils/package.json ./packages/utils/package.json
+
+# Install ONLY production dependencies for the API closure
+RUN npm ci --omit=dev --workspace=@app/api --workspace=@app/db --workspace=@app/queue --workspace=@app/types --workspace=@app/utils
+
+# Copy built code and local package source from builder
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/package.json ./package.json
 
 # Set environment
 ENV NODE_ENV=production
