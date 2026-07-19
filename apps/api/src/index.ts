@@ -1,4 +1,3 @@
-import "dotenv/config";
 import app from "./server.js";
 import { connectRedis } from "./lib/redisClient.js";
 import { logger } from "@app/utils";
@@ -6,7 +5,7 @@ import { runMigrations } from "@app/db";
 import { AuthService } from "./services/auth.service.js";
 import { AuthUtils } from "./utils/auth.utils.js";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.API_HOST_PORT);
 
 /**
  * Initializes and starts the API server.
