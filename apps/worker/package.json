@@ -14,6 +14,7 @@
     "@app/queue": "*",
     "@app/types": "*",
     "@app/utils": "*",
+    "axios": "^1.18.1",
     "bullmq": "^5.66.5",
     "dotenv": "^16.6.1",
     "pg": "^8.17.1",

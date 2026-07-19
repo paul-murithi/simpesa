@@ -3,10 +3,8 @@ services:
     image: postgres:16-alpine
     container_name: simpesa-db-dev
     restart: always
-    environment:
-      POSTGRES_USER: simpesa
-      POSTGRES_PASSWORD: simpesa_password
-      POSTGRES_DB: simpesa
+    env_file:
+      - .env.host
     ports:
       - "5432:5432"
     volumes:
