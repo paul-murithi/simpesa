@@ -1,11 +1,9 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: simpesa-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-simpesa}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-simpesa}
-      POSTGRES_DB: ${POSTGRES_DB:-simpesa}
+    env_file:
+      - .env.docker
     volumes:
       - simpesa_db_data:/var/lib/postgresql/data
     expose:
@@ -17,7 +15,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: simpesa-redis
     volumes:
       - simpesa_redis_data:/data
@@ -34,15 +32,10 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     container_name: simpesa-api
+    env_file:
+      - .env.docker
     ports:
       - "${API_HOST_PORT:-33000}:${API_PORT:-3000}"
-    environment:
-      PORT: ${API_PORT:-3000}
-      NODE_ENV: ${NODE_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:35173,http://127.0.0.1:35173}
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -52,13 +45,8 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
     container_name: simpesa-worker
-    environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://simpesa:simpesa@db:5432/simpesa}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      PROCESSING_VISIBILITY_DELAY_MS: ${PROCESSING_VISIBILITY_DELAY_MS:-5000}
-      PIN_TIMEOUT_MS: ${PIN_TIMEOUT_MS:-60000}
+    env_file:
+      - .env.docker
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -70,6 +58,8 @@ services:
       context: .
       dockerfile: apps/ui/Dockerfile
     container_name: simpesa-ui
+    env_file:
+      - .env.docker
     ports:
       - "${UI_HOST_PORT:-35173}:80"
     depends_on:

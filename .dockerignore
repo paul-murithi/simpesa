@@ -1,0 +1,7 @@
+.git
+.github
+**/.env
+*.md
+.DS_Store
+coverage/
+.nyc_output/

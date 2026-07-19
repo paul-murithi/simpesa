@@ -53,6 +53,9 @@ Sim-Pesa follows a microservices-inspired architecture:
 
 ### Installation & Run
 
+#### Option A: Appliance Mode (Zero Config)
+Best for testing your integration without touching the Sim-Pesa code.
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/paul-murithi/simpesa.git
@@ -62,35 +65,30 @@ Sim-Pesa follows a microservices-inspired architecture:
    ```bash
    docker compose up -d
    ```
-3. The system will be ready once the DB migrations complete automatically.
+3. Access the UI at `http://localhost:35173`.
 
-## 5. Architecture Deep Dive
+#### Option B: Development Mode
+Best for contributing to Sim-Pesa or debugging.
 
-### 2-Phase Transaction Processing
+1. Clone and setup:
+   ```bash
+   git clone https://github.com/paul-murithi/simpesa.git
+   cd simpesa
+   npm run setup
+   ```
+2. Start infrastructure (DB & Redis):
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d
+   ```
+3. Start services with hot-reload:
+   ```bash
+   npm run dev
+   ```
+4. Access the UI at `http://localhost:5173` (default Vite port for local dev).
 
-Sim-Pesa uses a robust 2-phase approach to ensure data consistency and mimic real-world asynchronous payment flows:
+---
 
-1.  **Phase 1 (Validation & Locking):** The worker picks up a job, starts a database transaction, and locks the User and Merchant rows using `SELECT FOR UPDATE`. It validates the user's balance and transitions the transaction to `PROCESSING`.
-2.  **Interaction Waiting:** The worker then enters an asynchronous wait state, listening on a Redis Pub/Sub channel for a PIN signal from the UI.
-3.  **Phase 2 (Finalization):** Once a signal is received (CORRECT, WRONG_PIN, CANCELLED, or TIMEOUT), the worker starts a second database transaction. If the PIN was correct, it debits the user, credits the merchant, and updates the transaction to a terminal `SUCCESS` state.
-
-### Idempotency & Redis Fingerprinting
-
-To prevent duplicate transaction requests within a short window, Sim-Pesa implements a fingerprinting mechanism:
-
-- A SHA-256 hash is generated from the `phone_number`, `short_code`, `amount`, and `external_reference`.
-- The API attempts to set this hash as a key in Redis using `SET NX` with a 60-second TTL.
-- Subsequent identical requests within this window are rejected, ensuring exactly-once ingestion.
-
-### Reliable Webhooks
-
-After a transaction reaches a terminal state, a webhook job is enqueued:
-
-- **Structure:** Mimics Daraja's JSON response format exactly.
-- **Retries:** 5 attempts with exponential backoff (starting at 2s).
-- **Persistence:** All webhook attempts and responses are logged in the database for debugging.
-
-### Services & Ports
+### Services & Ports (Appliance Mode)
 
 | Service        | Host Port | Description                |
 | :------------- | :-------- | :------------------------- |
